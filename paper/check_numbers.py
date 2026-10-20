@@ -31,7 +31,8 @@ SUMMARIES = {
 }
 COMPARISONS = ROOT / "runs" / "report_full" / "comparisons.csv"
 STRICT = ROOT / "runs" / "report_strict" / "summary.csv"
-EXTERNAL = ROOT / "runs" / "report_external" / "moa.json"
+EXTERNAL = [ROOT / "runs" / "report_external" / "moa.json",
+            ROOT / "runs" / "report_external" / "literature.json"]
 SYSTEMS = ("qwen25-7b__closed_book", "qwen25-7b__rag_verify-none",
            "qwen25-7b__rag_verify-revise")
 
@@ -160,34 +161,54 @@ def collect_claims() -> list[tuple[str, str, str]]:
             ]
 
     # Section 7.6: independent confirmation against ChEMBL mechanism of action.
-    if EXTERNAL.exists():
-        ext = json.loads(EXTERNAL.read_text(encoding="utf-8"))
-        src = "report_external/moa.json"
+    ext: dict = {}
+    for path in EXTERNAL:
+        if path.exists():
+            for system, res in json.loads(path.read_text(encoding="utf-8")).items():
+                ext.setdefault(system, {}).update({k: v for k, v in res.items() if v})
+    if ext:
+        src = "report_external/*.json"
+        # The draft quotes the full ChEMBL breakdown for the primary system and only the
+        # contrasting figures for the others. The checker's job is that the numbers the draft
+        # states are right - not that every value in an artefact appears in the text.
         for system, res in ext.items():
             m = res.get("moa")
             if not m:
                 continue
+            primary = system == SYSTEMS[2]
             claims += [
                 (f"{system} MoA edges checked", f"{m['edges_checked']:,}", src),
-                (f"{system} MoA drugs", f"{m['drugs_checked']:,}", src),
-                (f"{system} ChEMBL coverage", f"{m['drug_chembl_coverage'] * 100:.1f}%", src),
-                (f"{system} MoA coverage", f"{m['drug_moa_coverage'] * 100:.1f}%", src),
-                (f"{system} edges with an opinion", f"{m['edges_with_opinion']:,}", src),
                 (f"{system} confirmation rate", f"{m['independent_confirmation_rate'] * 100:.1f}%",
                  src),
+            ] if primary else [
+                (f"{system} MoA edges checked", f"{m['edges_checked']:,}", src),
             ]
-            for role, n in (m.get("edges_by_role") or {}).items():
-                claims.append((f"{system} {role} edges", f"{n:,}", src))
+            if primary:
+                claims += [
+                    (f"{system} MoA drugs", f"{m['drugs_checked']:,}", src),
+                    (f"{system} ChEMBL coverage", f"{m['drug_chembl_coverage'] * 100:.1f}%", src),
+                    (f"{system} MoA coverage", f"{m['drug_moa_coverage'] * 100:.1f}%", src),
+                    (f"{system} edges with an opinion", f"{m['edges_with_opinion']:,}", src),
+                ]
+                for role, n in (m.get("edges_by_role") or {}).items():
+                    claims.append((f"{system} {role} edges", f"{n:,}", src))
             for role, rate in (m.get("confirmation_by_role") or {}).items():
-                if rate == rate:
+                if rate == rate and (primary or role == "target"):
                     claims.append((f"{system} {role} confirmed", _fmt(rate, 3), src))
             lit = res.get("literature")
             if lit:
                 claims += [
                     (f"{system} co-mention rate", _fmt(lit["system_comention_rate"], 3), src),
-                    (f"{system} control co-mention", _fmt(lit["control_comention_rate"], 3), src),
+                    (f"{system} random control", _fmt(lit["control_comention_rate"], 3), src),
                     (f"{system} co-mention pairs", f"{lit['system_pairs']:,}", src),
                 ]
+                if "matched_control_comention_rate" in lit:
+                    claims += [
+                        (f"{system} matched control",
+                         _fmt(lit["matched_control_comention_rate"], 3), src),
+                        (f"{system} lift vs matched",
+                         f"+{lit['lift_over_matched_control']:.3f}", src),
+                    ]
 
     rows = [json.loads(line) for line in PROBE.read_text(encoding="utf-8").splitlines() if line]
     kinds = {k: [r for r in rows if r["kind"] == k] for k in

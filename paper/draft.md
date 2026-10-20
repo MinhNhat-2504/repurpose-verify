@@ -562,8 +562,9 @@ provide the stricter one as a configuration flag (`verifier.require_target_first
 than silently adopting either.
 
 **Independent confirmation.** Of the 1,690 distinct drug→gene edges asserted by verified
-proposals of the full system, 65.7% of the drugs map to ChEMBL and 23.5% have a ChEMBL
-mechanism-of-action entry, leaving 406 edges on which the independent pipeline has an opinion.
+proposals of the full system, covering 1,471 drugs, 65.7% of the drugs map to ChEMBL and 23.5%
+have a ChEMBL mechanism-of-action entry, leaving 406 edges on which the independent pipeline has
+an opinion.
 Of those, **43.1% are confirmed** — the agent's protein is among ChEMBL's recorded mechanism
 targets for that drug. Split by the role PrimeKG assigns the edge:
 
@@ -587,8 +588,40 @@ claimed interaction is *recorded somewhere*, and for about half of the target-ro
 quarter of all edges on which ChEMBL has an opinion — it is also the drug's curated mechanism.
 A reader should not read "verified" as "pharmacologically the mechanism".
 
-**Post-cutoff literature.** `[RESULT-PENDING: co-mention rates against the random-drug control,
-from runs/report_external/]`
+**Post-cutoff literature.** For each system's top-5 proposals we asked whether any PubMed record
+published after the cutoff co-mentions the drug and the disease.
+
+| System | Pairs | Co-mention | Random control | Degree-matched control | Lift vs matched |
+|---|---|---|---|---|---|
+| closed book | 955 | 0.308 | 0.034 | 0.063 | **+0.245** |
+| RAG, no verifier | 893 | 0.078 | 0.021 | 0.038 | **+0.040** |
+| RAG + verify-revise | 888 | 0.083 | 0.036 | 0.046 | **+0.037** |
+
+**Table 8.** Post-cutoff co-mention. The matched control pairs each proposed drug with another of
+comparable knowledge-graph degree for the same disease.
+
+The control matters more than the headline here. Against randomly drawn drugs, the closed-book
+agent looks strongly corroborated — 0.308 against 0.034, an eight-fold lift. Its examples are
+metformin, ibuprofen and amiodarone: drugs that co-occur with nearly any disease in the
+literature. Matching the control on knowledge-graph degree, a proxy for how well studied a drug
+is, nearly doubles its control rate to 0.063 and removes about a tenth of the apparent lift. Two
+readings follow, and they differ in how much weight they can carry.
+
+The **grounded systems' lift is small and that finding is robust**: their mechanism-verified
+proposals are co-mentioned in post-cutoff literature barely more often than equally studied drugs
+for the same disease (+0.037 and +0.040). Degree is an imperfect proxy and under-corrects for
+publication volume, but under-correction can only inflate a lift, so the true values are no
+higher than these.
+
+The **closed-book advantage is an upper bound** and we do not read it as skill. The same
+under-correction applies in its favour, its proposals are concentrated on widely published drugs,
+and co-mention is not efficacy — a drug discussed alongside a disease may be discussed as a
+contraindication or a confounder. Matching the control on each drug's post-cutoff publication
+count, rather than its graph degree, would tighten this and is the obvious next measurement.
+
+What this check does establish is a negative result that the ranking metrics support: a
+mechanism-verified pipeline over this knowledge base did not surface drug–disease pairs that the
+subsequent literature went on to discuss, relative to comparable drugs.
 
 ## 8 Discussion
 
