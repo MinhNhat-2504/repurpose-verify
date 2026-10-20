@@ -30,6 +30,8 @@ SUMMARIES = {
     "phase3": ROOT / "runs" / "report_full_phase3" / "summary.csv",
 }
 COMPARISONS = ROOT / "runs" / "report_full" / "comparisons.csv"
+STRICT = ROOT / "runs" / "report_strict" / "summary.csv"
+EXTERNAL = ROOT / "runs" / "report_external" / "moa.json"
 SYSTEMS = ("qwen25-7b__closed_book", "qwen25-7b__rag_verify-none",
            "qwen25-7b__rag_verify-revise")
 
@@ -141,6 +143,52 @@ def collect_claims() -> list[tuple[str, str, str]]:
     claims.append(("masked diseases", str(int(masked["n_diseases"].iloc[0])),
                    "report_masked/summary.csv"))
 
+    # Section 7.6: role sensitivity of "verified", re-scored without any model inference.
+    if STRICT.exists():
+        strict = pd.read_csv(STRICT).set_index("system")
+        src = "report_strict/summary.csv"
+        for base in (SYSTEMS[2], SYSTEMS[1]):
+            name = f"{base}_strict"
+            if name not in strict.index or base not in strict.index:
+                continue
+            claims += [
+                (f"{base} verified, default", _fmt(strict.loc[base, "verified_rate"], 3), src),
+                (f"{base} verified, target-only", _fmt(strict.loc[name, "verified_rate"], 3), src),
+                (f"{base} malformed, default", _fmt(strict.loc[base, "malformed_path_rate"], 3), src),
+                (f"{base} malformed, target-only",
+                 _fmt(strict.loc[name, "malformed_path_rate"], 3), src),
+            ]
+
+    # Section 7.6: independent confirmation against ChEMBL mechanism of action.
+    if EXTERNAL.exists():
+        ext = json.loads(EXTERNAL.read_text(encoding="utf-8"))
+        src = "report_external/moa.json"
+        for system, res in ext.items():
+            m = res.get("moa")
+            if not m:
+                continue
+            claims += [
+                (f"{system} MoA edges checked", f"{m['edges_checked']:,}", src),
+                (f"{system} MoA drugs", f"{m['drugs_checked']:,}", src),
+                (f"{system} ChEMBL coverage", f"{m['drug_chembl_coverage'] * 100:.1f}%", src),
+                (f"{system} MoA coverage", f"{m['drug_moa_coverage'] * 100:.1f}%", src),
+                (f"{system} edges with an opinion", f"{m['edges_with_opinion']:,}", src),
+                (f"{system} confirmation rate", f"{m['independent_confirmation_rate'] * 100:.1f}%",
+                 src),
+            ]
+            for role, n in (m.get("edges_by_role") or {}).items():
+                claims.append((f"{system} {role} edges", f"{n:,}", src))
+            for role, rate in (m.get("confirmation_by_role") or {}).items():
+                if rate == rate:
+                    claims.append((f"{system} {role} confirmed", _fmt(rate, 3), src))
+            lit = res.get("literature")
+            if lit:
+                claims += [
+                    (f"{system} co-mention rate", _fmt(lit["system_comention_rate"], 3), src),
+                    (f"{system} control co-mention", _fmt(lit["control_comention_rate"], 3), src),
+                    (f"{system} co-mention pairs", f"{lit['system_pairs']:,}", src),
+                ]
+
     rows = [json.loads(line) for line in PROBE.read_text(encoding="utf-8").splitlines() if line]
     kinds = {k: [r for r in rows if r["kind"] == k] for k in
              ("target", "positive_control", "negative_control")}
@@ -170,7 +218,8 @@ def collect_claims() -> list[tuple[str, str, str]]:
 
 
 def main() -> int:
-    missing = [p for p in [DRAFT, GT_REPORT, PROBE, *SUMMARIES.values()] if not p.exists()]
+    required = [DRAFT, GT_REPORT, PROBE, COMPARISONS, *SUMMARIES.values()]
+    missing = [p for p in required if not p.exists()]
     if missing:
         print("Cannot verify the draft - these artefacts are missing:")
         for p in missing:

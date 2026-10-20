@@ -19,6 +19,7 @@ Two checks, both automated:
 
 from __future__ import annotations
 
+import json
 import logging
 import random
 from collections import Counter
@@ -285,6 +286,25 @@ def write_external_report(results: dict[str, dict], out_path: Path, cutoff: date
             f"| {system} | {m['edges_checked']} | {m['drugs_checked']} | "
             f"{m['drug_chembl_coverage']:.3f} | {m['drug_moa_coverage']:.3f} | "
             f"{m['edges_with_opinion']} | **{m['independent_confirmation_rate']:.3f}** |")
+    if any(r.get("moa", {}).get("edges_by_role") for r in results.values()):
+        lines += ["", "### By the role PrimeKG assigns the drug-protein edge", "",
+                  "Only `target` can be a mechanism of action; `enzyme`, `transporter` and",
+                  "`carrier` describe pharmacokinetics. A confirmation rate of zero for those",
+                  "roles is the expected result and is independent evidence that the",
+                  "distinction matters.", "",
+                  "| System | Role | Edges | Confirmed |", "|---|---|---|---|"]
+        for system, res in results.items():
+            m = res.get("moa")
+            if not m or not m.get("edges_by_role"):
+                continue
+            by_role = m["edges_by_role"]
+            conf = m.get("confirmation_by_role", {})
+            for role in sorted(by_role, key=lambda k: -by_role[k]):
+                rate = conf.get(role)
+                shown = f"{rate:.3f}" if rate is not None and rate == rate else "no opinion"
+                lines.append(f"| {system} | {role} | {by_role[role]} | {shown} |")
+            lines.append(f"| {system} | *non-target share* | "
+                         f"{m['non_target_role_share']:.3f} | |")
     lines += ["", f"## Post-cutoff literature corroboration (published after {cutoff})", "",
               "Share of a system's top proposals for which at least one PubMed record published",
               "after the cutoff co-mentions the drug and the disease, against random drugs drawn",
@@ -306,4 +326,16 @@ def write_external_report(results: dict[str, dict], out_path: Path, cutoff: date
     out_path = Path(out_path)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    # Structured copy so the manuscript's number checker reads values, not a rendered table.
+    json_path = out_path.with_suffix(".json")
+    existing: dict = {}
+    if json_path.exists():
+        try:
+            existing = json.loads(json_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            existing = {}
+    for system, res in results.items():
+        merged = {**existing.get(system, {}), **{k: v for k, v in res.items() if v}}
+        existing[system] = merged
+    json_path.write_text(json.dumps(existing, indent=2, default=str), encoding="utf-8")
     return out_path

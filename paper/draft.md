@@ -561,8 +561,31 @@ handed, and then credited with, a path that is pharmacokinetics. We report both 
 provide the stricter one as a configuration flag (`verifier.require_target_first_edge`) rather
 than silently adopting either.
 
-**Independent confirmation.** `[RESULT-PENDING: ChEMBL mechanism-of-action confirmation rates,
-broken out by KG edge role, from runs/report_external/moa.md]`
+**Independent confirmation.** Of the 1,690 distinct drug→gene edges asserted by verified
+proposals of the full system, 65.7% of the drugs map to ChEMBL and 23.5% have a ChEMBL
+mechanism-of-action entry, leaving 406 edges on which the independent pipeline has an opinion.
+Of those, **43.1% are confirmed** — the agent's protein is among ChEMBL's recorded mechanism
+targets for that drug. Split by the role PrimeKG assigns the edge:
+
+| KG role of the drug→protein edge | Edges | Confirmed by ChEMBL |
+|---|---|---|
+| target | 1,442 | **0.535** |
+| enzyme | 133 | **0.000** |
+| transporter | 61 | **0.000** |
+| carrier | 54 | **0.000** |
+
+**Table 7.** ChEMBL mechanism-of-action confirmation by KG edge role, verified proposals of the
+full system (the unverified system gives 0.541 / 0.000 / 0.000 / 0.000 on 1,705 edges).
+
+Not one edge whose KG role is enzyme, transporter or carrier is confirmed as a mechanism target,
+which is what those roles mean and is independent evidence that the role distinction above is the
+right one to make. Among target-role edges, roughly half are confirmed: DrugBank records many
+proteins a drug binds, while ChEMBL's mechanism curation records the therapeutic target, so an
+unconfirmed target edge is usually a real interaction that is not the drug's mechanism of action
+rather than a false claim. The honest summary is that passing our verifier establishes that a
+claimed interaction is *recorded somewhere*, and for about half of the target-role edges — a
+quarter of all edges on which ChEMBL has an opinion — it is also the drug's curated mechanism.
+A reader should not read "verified" as "pharmacologically the mechanism".
 
 **Post-cutoff literature.** `[RESULT-PENDING: co-mention rates against the random-drug control,
 from runs/report_external/]`
