@@ -103,10 +103,24 @@ All systems are verified afterwards, whatever their mode, so fabricated-edge rat
 | KG contains the answer | Positives must have no indication/off-label edge in the KG. Held-out pairs are also masked from the KG before any run, and `report.json` shows the leakage check (`leakage_check_positives_in_kg` must be 0). |
 | Pre-cutoff evidence of the pair | Any trial of the pair that started on or before the cutoff, in any phase, makes it "known". |
 | Literature after the cutoff | PubMed search uses `datetype=pdat&maxdate=cutoff`. Every fetched record is re-checked, and citations to later papers are counted as invalid. |
-| LLM weights | Use open-weight models with an early documented cutoff (`knowledge_cutoff` is printed next to every result). The **leakage probe** asks the model closed-book whether it knows each positive, with positive and negative controls. `evaluate --probe` re-scores on the pairs the model does *not* know. |
+| LLM weights | Use open-weight models with an early documented cutoff (`knowledge_cutoff` is printed next to every result). The **leakage probe** asks the model closed-book whether it knows each positive, with positive and negative controls. `evaluate --probe` re-scores on the pairs the model does *not* know. Measured result below. |
 | External verifier evidence | Open Targets (live release, includes post-cutoff evidence) is **off** by default. When it is enabled, its edges are reported separately. |
 
 These controls reduce leakage but do not remove it. Discuss the remaining limits in the paper (see *Limitations*).
+
+### Leakage probe, measured (qwen2.5-7b, 965 items)
+
+| Item | n | Said yes | Flagged as post-cutoff knowledge |
+|---|---|---|---|
+| ground-truth positives | 565 | 0.117 | **0.021** |
+| pairs known at the cutoff (positive control) | 200 | 0.310 | 0.050 |
+| random unrelated pairs (negative control) | 200 | 0.025 | 0.000 |
+
+The controls are what make this readable. The yes-rate gap between known pairs and random pairs is 0.285, so the probe is not a model that just answers "no" — it does discriminate. And because the positive controls were already known at the cutoff, their 0.050 flag rate is the probe mistaking a confabulated date for knowledge: a false-positive floor. The positives' flag rate, 0.021, sits **below** that floor, so there is no leakage signal above the probe's own noise.
+
+Looking at the 66 positives the model did claim: **none** carried a post-2021 year. Fifty-four were dated *before* the cutoff (1957–2014) — the model believing a pair was long established, which is confabulation rather than leaked knowledge — and the remaining 12 carried no year at all, which is the only reason they are flagged (the rule treats "yes, unknown when" as potential leakage). Masking those 12 leaves 553 pairs over 199 diseases and moves the baselines by at most 0.005 Hit@20.
+
+The honest limit: the probe recalls only 31% of pairs genuinely known at the cutoff, so its flag rate is a **lower bound** and the masked evaluation is a sanity check, not a guarantee. A model with a later cutoff should be probed before its numbers are read, and `runs/probes/<model>.md` is written for exactly that purpose.
 
 ## Quick start
 

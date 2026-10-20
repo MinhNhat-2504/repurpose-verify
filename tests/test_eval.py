@@ -84,6 +84,33 @@ def test_review_roundtrip(tmp_path, kg):
     assert weighted_kappa(np.array([1, 2, 3]), np.array([1, 2, 3]), [1, 2, 3, 4, 5]) == pytest.approx(1.0)
 
 
+def test_probe_summary_and_sensitivity(tmp_path):
+    from repurpose_verify.eval.leakage_probe import (load_probe_mask_items, summarize_probe,
+                                                     write_probe_report)
+
+    rows = [
+        # a positive the model claims with a post-cutoff year -> flagged, dropped from masking
+        {"kind": "target", "drug_idx": 0, "disease_idx": 9, "drug": "Metformin",
+         "disease": "crc", "answer": "yes", "year": 2023, "model_knows": True},
+        # a positive it does not know -> kept
+        {"kind": "target", "drug_idx": 1, "disease_idx": 9, "drug": "Celecoxib",
+         "disease": "crc", "answer": "no", "year": None, "model_knows": False},
+        {"kind": "positive_control", "drug_idx": 2, "disease_idx": 10, "drug": "Imatinib",
+         "disease": "cml", "answer": "yes", "year": 2001, "model_knows": False},
+        {"kind": "negative_control", "drug_idx": 2, "disease_idx": 9, "drug": "Imatinib",
+         "disease": "crc", "answer": "no", "year": None, "model_knows": False},
+    ]
+    path = tmp_path / "probe.jsonl"
+    path.write_text("\n".join(json.dumps(r) for r in rows), encoding="utf-8")
+    s = summarize_probe(path)
+    assert s["target"]["flagged_post_cutoff"] == 0.5
+    assert s["sensitivity_check"]["positive_minus_negative_yes_rate"] == 1.0
+    assert s["sensitivity_check"]["usable"] is True
+    report = write_probe_report(path, 2021).read_text(encoding="utf-8")
+    assert "Metformin" in report and "1 flagged pairs" in report
+    assert load_probe_mask_items(path) == {(1, 9)}
+
+
 def test_pubmed_xml():
     xml = """<PubmedArticleSet><PubmedArticle><MedlineCitation><PMID>42</PMID><Article>
     <Journal><JournalIssue><PubDate><Year>2020</Year><Month>Mar</Month></PubDate></JournalIssue>

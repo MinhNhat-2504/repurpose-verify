@@ -27,10 +27,20 @@ Reply with JSON only: {{"answer": "yes" | "no" | "unsure", "year": <number or nu
 
 
 def build_probe_items(gt: GroundTruth, kg: KnowledgeGraph, n_controls: int = 200,
-                      seed: int = 13) -> list[dict]:
+                      seed: int = 13, eval_only: bool = True) -> list[dict]:
+    """Probe items: the positives, plus controls that calibrate the model's "yes".
+
+    Only positives inside the evaluation diseases are probed by default - the masked
+    evaluation can only use those, and probing all of them costs hours of inference for
+    answers nothing reads.
+    """
     rng = random.Random(seed)
+    positives = gt.positives
+    if eval_only:
+        keep = set(int(d) for d in gt.eval_diseases["disease_idx"])
+        positives = positives[positives.disease_idx.isin(keep)]
     items = [{"drug_idx": int(r.drug_idx), "disease_idx": int(r.disease_idx), "kind": "target"}
-             for r in gt.positives.itertuples()]
+             for r in positives.itertuples()]
     known = [tuple(map(int, x)) for x in gt.known[["drug_idx", "disease_idx"]].itertuples(index=False)]
     for d, s in rng.sample(known, min(n_controls, len(known))):
         items.append({"drug_idx": d, "disease_idx": s, "kind": "positive_control"})
@@ -44,6 +54,9 @@ def build_probe_items(gt: GroundTruth, kg: KnowledgeGraph, n_controls: int = 200
             known_set.add(pair)
             items.append({"drug_idx": pair[0], "disease_idx": pair[1], "kind": "negative_control"})
             added += 1
+    # Interleave the kinds: the controls are what show the probe can say "yes" at all, so a
+    # truncated run (--limit) must still contain them rather than only targets.
+    rng.shuffle(items)
     return items
 
 
@@ -87,6 +100,12 @@ def run_probe(llm: LLMClient, kg: KnowledgeGraph, items: list[dict], cutoff_year
     return out_path
 
 
+def load_probe_mask_items(path: Path) -> set[tuple[int, int]]:
+    """Positives the probed model does NOT claim to know: what the masked evaluation keeps."""
+    return {(int(r["drug_idx"]), int(r["disease_idx"])) for r in read_jsonl(Path(path))
+            if r.get("kind") == "target" and not r.get("model_knows", False)}
+
+
 def summarize_probe(path: Path) -> dict:
     rows = list(read_jsonl(Path(path)))
     out: dict = {}
@@ -96,8 +115,76 @@ def summarize_probe(path: Path) -> dict:
             continue
         out[kind] = {"n": len(rs),
                      "said_yes": sum(r["answer"] == "yes" for r in rs) / len(rs),
+                     "unsure": sum(r["answer"] == "unsure" for r in rs) / len(rs),
+                     "errors": sum(r["answer"] == "error" for r in rs),
                      "flagged_post_cutoff": sum(r["model_knows"] for r in rs) / len(rs)}
+    pos, neg = out.get("positive_control"), out.get("negative_control")
+    if pos and neg:
+        # Without this gap the probe has no discriminating power and a "no leakage found"
+        # result would only mean the model declines to answer.
+        out["sensitivity_check"] = {
+            "positive_minus_negative_yes_rate": round(pos["said_yes"] - neg["said_yes"], 4),
+            "usable": bool(pos["said_yes"] - neg["said_yes"] >= 0.2),
+            "note": ("A model that answers 'no' to everything would show zero leakage; the gap "
+                     "between pairs known at the cutoff and random pairs is what makes the "
+                     "masked evaluation meaningful."),
+        }
     return out
+
+
+def write_probe_report(path: Path, cutoff_year: int, out_path: Path | None = None) -> Path:
+    """Markdown table of the probe, for the paper's leakage section."""
+    s = summarize_probe(path)
+    rows = list(read_jsonl(Path(path)))
+    flagged = [r for r in rows if r["kind"] == "target" and r["model_knows"]]
+    lines = [f"# Weight-level leakage probe (knowledge cutoff {cutoff_year})", "",
+             "The model is asked, closed book, whether each pair has reached a phase 2+ trial "
+             "or approval, and since when. A pair it claims with a post-cutoff year (or with no "
+             "year) is flagged; `evaluate --probe` then scores only the unflagged pairs.", "",
+             "| Item | n | Said yes | Unsure | Flagged as post-cutoff knowledge |",
+             "|---|---|---|---|---|"]
+    labels = {"target": "ground-truth positives", "positive_control": "pairs known at the cutoff",
+              "negative_control": "random unrelated pairs"}
+    for kind, label in labels.items():
+        r = s.get(kind)
+        if r:
+            lines.append(f"| {label} | {r['n']} | {r['said_yes']:.3f} | {r['unsure']:.3f} | "
+                         f"{r['flagged_post_cutoff']:.3f} |")
+    check = s.get("sensitivity_check")
+    if check:
+        verdict = "usable" if check["usable"] else "NOT usable - the probe cannot say yes"
+        lines += ["", f"**Sensitivity:** yes-rate gap between known pairs and random pairs = "
+                      f"{check['positive_minus_negative_yes_rate']:.3f} ({verdict}). "
+                      f"{check['note']}"]
+    tgt, pos, neg = s.get("target"), s.get("positive_control"), s.get("negative_control")
+    if tgt and pos and neg:
+        # Controls were already known at the cutoff, so any post-cutoff year they attract is the
+        # probe mistaking confabulated dates for knowledge. That is the floor to compare against.
+        false_positive = max(pos["flagged_post_cutoff"], neg["flagged_post_cutoff"])
+        lines += ["", "**How to read the flag rate.** Controls are pairs that were already known "
+                      f"at the cutoff or unrelated, so their flag rate - {false_positive:.3f} - is "
+                      "the probe mistaking a confabulated date for knowledge, not leakage.",
+                  "", f"The positives' flag rate is {tgt['flagged_post_cutoff']:.3f}, "
+                      + ("at or below that floor, so this probe finds no leakage signal above "
+                         "its own noise." if tgt["flagged_post_cutoff"] <= false_positive else
+                         "above that floor; the excess is the part worth treating as leakage."),
+                  "", f"The probe is a weak detector either way: it recalls only "
+                      f"{pos['said_yes']:.1%} of pairs that were genuinely known at the cutoff, so "
+                      "the flag rate is a lower bound on leakage and the masked evaluation is a "
+                      "sanity check, not a guarantee."]
+    if flagged:
+        lines += ["", f"## {len(flagged)} flagged pairs (excluded from the masked evaluation)", "",
+                  "| Drug | Disease | Claimed year |", "|---|---|---|"]
+        for r in flagged[:50]:
+            lines.append(f"| {r['drug']} | {r['disease']} | {r['year'] if r['year'] else '-'} |")
+        if len(flagged) > 50:
+            lines.append(f"| ... | ... | {len(flagged) - 50} more |")
+    else:
+        lines += ["", "No ground-truth positive was claimed with post-cutoff knowledge, so the "
+                      "masked evaluation keeps every pair."]
+    out_path = Path(out_path) if out_path else Path(path).with_suffix(".md")
+    out_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return out_path
 
 
 if __name__ == "__main__":  # pragma: no cover

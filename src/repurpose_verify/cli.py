@@ -229,16 +229,19 @@ def cmd_reverify(ctx: Context, args) -> None:
 
 def cmd_probe(ctx: Context, args) -> None:
     from .agent.llm import make_client
-    from .eval.leakage_probe import build_probe_items, run_probe, summarize_probe
+    from .eval.leakage_probe import (build_probe_items, run_probe, summarize_probe,
+                                     write_probe_report)
 
     profile = ctx.cfg.model(args.model)
-    items = build_probe_items(ctx.gt, ctx.kg, n_controls=args.controls)
+    items = build_probe_items(ctx.gt, ctx.kg, n_controls=args.controls,
+                              eval_only=not args.all_positives)
     if args.limit:
         items = items[:args.limit]
     out = ctx.cfg.runs_dir / "probes" / f"{args.model}.jsonl"
     out.parent.mkdir(parents=True, exist_ok=True)
     run_probe(make_client(profile), ctx.kg, items, ctx.cfg.cutoff.year, out, workers=args.workers)
     print(json.dumps(summarize_probe(out), indent=2))
+    print(f"Report: {write_probe_report(out, ctx.cfg.cutoff.year)}")
 
 
 # ---------------------------------------------------------------------- evaluation
@@ -360,7 +363,10 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--model", required=True)
     s.add_argument("--controls", type=int, default=200)
     s.add_argument("--limit", type=int)
-    s.add_argument("--workers", type=int, default=4)
+    s.add_argument("--all-positives", action="store_true",
+                   help="probe every positive, not only those in the evaluation diseases")
+    s.add_argument("--workers", type=int, default=1,
+                   help="raise only against a server that serves requests in parallel")
     s.set_defaults(fn=cmd_probe)
 
     s = sub.add_parser("evaluate", help="score runs and write the report")

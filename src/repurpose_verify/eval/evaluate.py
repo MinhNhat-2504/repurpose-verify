@@ -28,11 +28,9 @@ def load_run(run_dir: Path) -> tuple[str, dict, dict[int, dict]]:
 
 def load_probe_mask(path: Path) -> set[tuple[int, int]]:
     """Pairs the probed model does NOT already know about (kept in the masked evaluation)."""
-    keep = set()
-    for r in read_jsonl(Path(path)):
-        if r.get("kind") == "target" and not r.get("model_knows", False):
-            keep.add((int(r["drug_idx"]), int(r["disease_idx"])))
-    return keep
+    from .leakage_probe import load_probe_mask_items
+
+    return load_probe_mask_items(path)
 
 
 def evaluate_runs(gt: GroundTruth, run_dirs: list[Path], ks: list[int], n_boot: int = 1000,
