@@ -99,11 +99,26 @@ def test_literature_uses_a_control(kg):
     lit = PostCutoffLiterature(http, CUTOFF)
     assert lit.mindate == "2022/01/01"
     recs = [_record(9, [], ranked=[{"drug_idx": 0}, {"drug_idx": 1}])]
-    out = validate_literature(kg, recs, lit, top_k=2, controls_per_disease=1, seed=1)
+    out = validate_literature(kg, recs, lit, top_k=2, controls_per_disease=1, seed=1,
+                              matched_controls=False)
     assert out["system_pairs"] == 2 and out["system_comention_rate"] == 0.5
     assert out["control_pairs"] == 1
     assert out["lift_over_control"] == pytest.approx(0.5 - out["control_comention_rate"])
     assert "12 post-cutoff records" in out["examples"][0]
+    assert "lift_over_matched_control" not in out
+
+
+def test_literature_matched_control_is_degree_matched(kg):
+    """Controls must be drawn from drugs as well studied as the proposed ones."""
+    counts = {'"Metformin" AND "colorectal cancer"': 9}
+    lit = PostCutoffLiterature(FakeHTTP(counts=counts), CUTOFF)
+    recs = [_record(9, [], ranked=[{"drug_idx": 0}])]
+    out = validate_literature(kg, recs, lit, top_k=1, controls_per_disease=0, seed=3)
+    # Metformin (kg:0) co-mentions; its degree peer does not, so the matched lift is positive.
+    assert out["system_comention_rate"] == 1.0
+    assert out["matched_control_pairs"] == 1
+    assert out["matched_control_comention_rate"] == 0.0
+    assert out["lift_over_matched_control"] == 1.0
 
 
 def test_external_report(tmp_path, kg):

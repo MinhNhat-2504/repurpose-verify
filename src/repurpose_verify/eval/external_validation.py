@@ -227,20 +227,43 @@ class PostCutoffLiterature:
             return 0
 
 
+def _degree_buckets(kg: KnowledgeGraph, drugs: list[int], width: float = 0.5
+                    ) -> dict[int, list[int]]:
+    """Group drugs by log2 knowledge-graph degree, a proxy for how well studied they are."""
+    import math
+
+    buckets: dict[int, list[int]] = {}
+    for d in drugs:
+        key = int(math.log2(kg.degree(d) + 1) / width)
+        buckets.setdefault(key, []).append(d)
+    return buckets
+
+
 def validate_literature(kg: KnowledgeGraph, records: list[dict], lit: PostCutoffLiterature,
                         top_k: int = 5, controls_per_disease: int = 5, seed: int = 13,
-                        known_by_disease: dict[int, set[int]] | None = None) -> dict:
-    """Post-cutoff co-mention rate for a system's top proposals, against a random-drug control."""
+                        known_by_disease: dict[int, set[int]] | None = None,
+                        matched_controls: bool = True) -> dict:
+    """Post-cutoff co-mention rate for a system's top proposals, against two controls.
+
+    The random control is matched on disease only. A well-known drug co-occurs with almost any
+    disease in the literature, so a system that names famous drugs beats that control without
+    having said anything. The matched control therefore pairs each proposed drug with another of
+    comparable knowledge-graph degree for the same disease, and it is the comparison to read.
+    """
+    import math
+
     rng = random.Random(seed)
     known = known_by_disease or {}
     drugs = [int(i) for i in kg.nodes_of_type(DRUG)]
-    hits = Counter()
-    totals = Counter()
+    buckets = _degree_buckets(kg, drugs) if matched_controls else {}
+    hits: Counter = Counter()
+    totals: Counter = Counter()
     examples: list[str] = []
     for rec in records:
         disease_idx = int(rec["disease_idx"])
         disease = str(kg.names[disease_idx])
-        proposed = [r["drug_idx"] for r in rec.get("ranked", [])[:top_k]]
+        proposed = [int(r["drug_idx"]) for r in rec.get("ranked", [])[:top_k]]
+        excluded = set(proposed) | known.get(disease_idx, set())
         for drug_idx in proposed:
             n = lit.count(str(kg.names[drug_idx]), disease)
             totals["system"] += 1
@@ -248,22 +271,38 @@ def validate_literature(kg: KnowledgeGraph, records: list[dict], lit: PostCutoff
                 hits["system"] += 1
                 if len(examples) < 10:
                     examples.append(f"{kg.names[drug_idx]} / {disease}: {n} post-cutoff records")
-        pool = [d for d in drugs if d not in set(proposed) | known.get(disease_idx, set())]
+            if matched_controls:
+                key = int(math.log2(kg.degree(drug_idx) + 1) / 0.5)
+                pool = [d for d in buckets.get(key, []) if d not in excluded]
+                if pool:
+                    peer = rng.choice(pool)
+                    totals["matched"] += 1
+                    if lit.count(str(kg.names[peer]), disease) > 0:
+                        hits["matched"] += 1
+        pool = [d for d in drugs if d not in excluded]
         for drug_idx in rng.sample(pool, min(controls_per_disease, len(pool))):
             n = lit.count(str(kg.names[drug_idx]), disease)
             totals["control"] += 1
             if n > 0:
                 hits["control"] += 1
+
+    def rate(key: str) -> float:
+        return hits[key] / totals[key] if totals[key] else float("nan")
+
     out = {
         "top_k": top_k,
         "system_pairs": totals["system"],
-        "system_comention_rate": hits["system"] / totals["system"] if totals["system"] else float("nan"),
+        "system_comention_rate": rate("system"),
         "control_pairs": totals["control"],
-        "control_comention_rate": hits["control"] / totals["control"] if totals["control"] else float("nan"),
+        "control_comention_rate": rate("control"),
         "examples": examples,
     }
     if totals["system"] and totals["control"]:
         out["lift_over_control"] = out["system_comention_rate"] - out["control_comention_rate"]
+    if totals["matched"]:
+        out["matched_control_pairs"] = totals["matched"]
+        out["matched_control_comention_rate"] = rate("matched")
+        out["lift_over_matched_control"] = out["system_comention_rate"] - rate("matched")
     return out
 
 
@@ -311,18 +350,29 @@ def write_external_report(results: dict[str, dict], out_path: Path, cutoff: date
               "for the same diseases. Co-mention is weak evidence; the control is what makes the",
               "comparison meaningful, since naming famous drugs scores well on co-mention alone.",
               "",
-              "| System | Top-K | Pairs | **Co-mention** | Control pairs | Control | Lift |",
-              "|---|---|---|---|---|---|---|"]
+              "A famous drug co-occurs with almost any disease, so the random control is not",
+              "enough: the *matched* control pairs each proposed drug with another of comparable",
+              "knowledge-graph degree for the same disease, and that is the column to read.", "",
+              "| System | Top-K | Pairs | **Co-mention** | Random control | Lift | "
+              "Degree-matched control | **Lift vs matched** |",
+              "|---|---|---|---|---|---|---|---|"]
     for system, res in results.items():
         lit = res.get("literature")
         if not lit:
             continue
-        lift = lit.get("lift_over_control")
+
+        def show(value, signed=False):
+            if value is None or value != value:
+                return "-"
+            return f"{value:+.3f}" if signed else f"{value:.3f}"
+
         lines.append(
             f"| {system} | {lit['top_k']} | {lit['system_pairs']} | "
-            f"**{lit['system_comention_rate']:.3f}** | {lit['control_pairs']} | "
-            f"{lit['control_comention_rate']:.3f} | "
-            f"{('%+.3f' % lift) if lift is not None else '-'} |")
+            f"**{show(lit['system_comention_rate'])}** | "
+            f"{show(lit['control_comention_rate'])} | "
+            f"{show(lit.get('lift_over_control'), signed=True)} | "
+            f"{show(lit.get('matched_control_comention_rate'))} | "
+            f"**{show(lit.get('lift_over_matched_control'), signed=True)}** |")
     out_path = Path(out_path)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
