@@ -129,6 +129,22 @@ max_tokens = 4096
 price_in_per_mtok = 0.0
 price_out_per_mtok = 0.0
 
+[models.llama31-8b]
+backend = "openai_compat"
+# Second model family, same size class as qwen2.5-7b, so a difference between the two is a
+# model difference rather than a capacity one. Built with the context raised, as above:
+#   printf 'FROM llama3.1:8b\nPARAMETER num_ctx 16384\n' > Modelfile
+#   ollama create llama3.1-8b-ctx16k -f Modelfile
+model = "llama3.1-8b-ctx16k"
+base_url = "http://localhost:11434/v1"
+api_key_env = "LOCAL_LLM_API_KEY"
+tool_mode = "native"
+knowledge_cutoff = "2023-12"           # verify on the model card
+temperature = 0.0
+max_tokens = 4096
+price_in_per_mtok = 0.0
+price_out_per_mtok = 0.0
+
 [models.claude-opus]
 backend = "anthropic"
 model = "claude-opus-5-5"
