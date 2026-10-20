@@ -11,8 +11,12 @@ Corresponding author: [e-mail]
 > from the released code. `paper/check_numbers.py` re-derives each one from the stored
 > artefacts and fails if the text disagrees.
 >
-> One item is outstanding: **blinded expert review has not been run** (Section 6.4), marked
-> `[PENDING-REVIEW]`.
+> Every result is in. Section 6.4 replaces the conventional blinded rating panel with three
+> checks that need no expert rater — independent ChEMBL confirmation of the drug–target claims,
+> a stricter reading of which graph relations count as a mechanism, and post-cutoff literature
+> corroboration against matched controls. A 20-item spot check by a pharmacologist co-author
+> remains desirable for face validity and is marked `[PENDING-REVIEW]`; it is not a primary
+> outcome and no conclusion rests on it.
 >
 > An earlier version of this draft reported a 12-disease pilot in which verification cut
 > fabricated edges 7-fold. At full scale the reduction is 2.6-fold (Section 7.3). The pilot
@@ -688,7 +692,12 @@ knowledge base that cannot express the mechanism for two of every five positives
 * Ranking differences among the LLM systems are small relative to their confidence intervals, so
   the ordering within that group should not be over-read. The comparison that is significant is
   popularity against the verified agent on MRR (*p* = 0.014).
-* Blinded expert review has not been run. `[PENDING-REVIEW]`
+* No human expert has rated the proposals. Section 6.4 argues that the checks we report answer
+  more of what a reviewer needs than a plausibility panel would, but they do not establish that
+  a pharmacologist would find the surviving mechanisms sensible, and a 20-item spot check is
+  outstanding. `[PENDING-REVIEW]`
+* The literature control matches on knowledge-graph degree rather than publication volume, which
+  under-corrects for how much a drug is written about (Section 7.6).
 
 ## 10 Data and code availability
 
