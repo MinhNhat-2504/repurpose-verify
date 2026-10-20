@@ -25,8 +25,8 @@ Corresponding author: [e-mail]
 > quietly replaced, because the discrepancy is itself a result about pilot-scale faithfulness
 > estimates.
 >
-> Every reference must be checked against the record before submission; those taken from
-> secondary summaries rather than read in full are marked `[verify]`.
+> Every reference has been resolved against an authoritative record; the audit and the one
+> citation it corrected are documented at the end of the reference list.
 
 ---
 
@@ -83,7 +83,7 @@ knowledge graphs; hallucination; evaluation
 Computational drug repurposing is an attractive target for LLM agents. The task rewards wide
 reading, the evidence is public, and the output — a short ranked list with an argument for each
 entry — is the kind of thing language models produce fluently. Recent reviews of agentic AI in
-drug discovery identify evaluation as the field's weak point rather than capability [1 verify].
+drug discovery identify evaluation as the field's weak point rather than capability [1].
 
 Two specific weaknesses motivate this work.
 
@@ -91,8 +91,10 @@ Two specific weaknesses motivate this work.
 held-out associations drawn from the same curated sources it reads. Those associations are
 historical facts: the indication is in DrugBank, the gene–disease link is in DisGeNET, the trial
 is in the literature. High accuracy under such a split is consistent with retrieval rather than
-inference. Benchmark audits in adjacent areas have shown that widely used splits leak in exactly
-this way, and that reported progress shrinks once leakage is removed [2 verify, 3 verify].
+inference. Audits of adjacent benchmarks have found exactly this kind of contamination across
+widely used splits, and have shown that which model leads a leaderboard can change once the test
+set's composition is corrected [2]; evaluated inductively rather than transductively, drug–target
+models generalise considerably worse than their reported figures suggest [3].
 
 **A fluent mechanism is not a verified one.** When an agent explains that drug D hits target T
 which drives disease S, the explanation is usually either taken at face value or scored by
@@ -141,13 +143,15 @@ they are typically evaluated on associations already present in the graph.
 
 **LLM agents in biomedical discovery.** Agentic systems now perform literature synthesis,
 property prediction and candidate generation. Reviews of the area single out reliability and the
-absence of agreed benchmarks as the limiting factors rather than raw capability [1 verify].
+absence of agreed benchmarks as the limiting factors rather than raw capability [1].
 Where mechanisms are reported, they are rarely machine-checked.
 
-**Leakage and benchmark auditing.** Transductive evaluation of drug–target interaction models
-has been shown to approach ceiling performance largely through leakage [3 verify], and a 2026
-audit of widely used biomolecular benchmarks found systematic inconsistencies, including protein
-duplication across splits [2 verify]. Our ground truth is built to be auditable in the same
+**Leakage and benchmark auditing.** Transductive drug–target interaction models have been shown to report inflated performance
+under the evaluation setups used in the literature, and to generalise poorly to the inductive
+setting that repurposing actually requires [3]. An audit of over fifty benchmark dataset
+configurations found pervasive cross-split contamination, label conflicts and structural
+redundancy, with drug–target interaction datasets singled out for extensive protein overlap
+between splits [2]. Our ground truth is built to be auditable in the same
 spirit, and we report the audit alongside the data.
 
 **Position of this work.** We do not propose a new predictor. We propose an evaluation under
@@ -443,6 +447,20 @@ probed model claims to know.
 **Table 4.** Ranking over the same 200 diseases and 565 positives. "Correct hits" counts
 positives recovered in a top-20 list, summed over diseases.
 
+![Faithfulness against accuracy for all six systems](figures/fig1_faithfulness_vs_accuracy.png)
+
+**Figure 1.** The two axes do not move together. Filled circles are the LLM systems; open
+diamonds are the knowledge-graph baselines, which emit no mechanism and therefore have no
+fabrication rate — they are placed in the shaded strip rather than at zero, which would read as
+"never fabricates" instead of "makes no checkable claim". The least faithful system ranks best
+among the LLM configurations, and the baseline that reads nothing ranks best of all.
+
+![Effect of verification on three measures](figures/fig2_verification_effect.png)
+
+**Figure 2.** What verification changes and what it leaves alone. Fabricated edges fall 2.6-fold
+and unresolvable endpoints are already near zero once the agent is grounded; Hit@20 is flat, and
+every configuration sits below the popularity baseline (dashed).
+
 **Grounding and verification act on faithfulness, strongly.** The closed-book agent fabricates
 21.1% of its mechanism edges, leaves 69.5% unresolvable, produces malformed paths in 67.6% of
 proposals, and has 0.3% of its proposals verified — 12 of 3,516. Adding graph tools takes
@@ -582,6 +600,13 @@ targets for that drug. Split by the role PrimeKG assigns the edge:
 **Table 7.** ChEMBL mechanism-of-action confirmation by KG edge role, verified proposals of the
 full system (the unverified system gives 0.541 / 0.000 / 0.000 / 0.000 on 1,705 edges).
 
+![Edges by graph role and their independent confirmation](figures/fig3_moa_by_role.png)
+
+**Figure 3.** Edges asserted by verified proposals, by the role PrimeKG assigns them (left), and
+the share each role's edges that ChEMBL confirms as a mechanism target (right). Rates are
+computed over the edges on which ChEMBL has an opinion. No enzyme, transporter or carrier edge
+is confirmed, which is what those roles mean.
+
 Not one edge whose KG role is enzyme, transporter or carrier is confirmed as a mechanism target,
 which is what those roles mean and is independent evidence that the role distinction above is the
 right one to make. Among target-role edges, roughly half are confirmed: DrugBank records many
@@ -711,38 +736,59 @@ graph and a mock model, requiring no network access.
 
 ## References
 
-1. AI agents in drug discovery: applications and case studies. *Drug Discovery Today*, 2026.
-   `[verify — cited from a secondary summary; confirm authors, volume and pages]`
-2. Auditing widely used biomolecular benchmarks reveals systematic data inconsistencies.
-   *Chemical Science*, 2026. `[verify]`
-3. On the reliability of drug–target interaction benchmarking and data leakage. arXiv:2311.12670.
-   `[verify — confirm title and authors]`
-4. Himmelstein DS, Lizee A, Hessler C, et al. Systematic integration of biomedical knowledge
-   prioritizes drugs for repurposing. *eLife* 2017;6:e26726.
+1. Huynh D, Seal S, Reid D, Carpenter A, Bender A, Spjuth O, AIA4S Consortium. AI agents in drug
+   discovery: applications and case studies. *Drug Discovery Today* 2026;31:104650.
+   doi:10.1016/j.drudis.2026.104650
+2. Schuh MG, Daniluk A, Sieber SA. Auditing widely used biomolecular benchmarks reveals
+   systematic data inconsistencies. *Chemical Science* 2026;17:17455–17467.
+   doi:10.1039/d6sc01799a
+3. de la Fuente J, Serrano G, Veleiro U, Casals M, Vera L, Pizurica M, Pineda-Lucena A, Ochoa I,
+   Vicent S, Gevaert O, Hernaez M. Towards a more inductive world for drug repurposing
+   approaches. arXiv:2311.12670 (2023).
+4. Himmelstein DS, Lizee A, Hessler C, Brueggeman L, Chen SL, Hadley D, Green A, Khankhanian P,
+   Baranzini SE. Systematic integration of biomedical knowledge prioritizes drugs for
+   repurposing. *eLife* 2017;6:e26726. doi:10.7554/eLife.26726
 5. Chandak P, Huang K, Zitnik M. Building a knowledge graph to enable precision medicine.
-   *Scientific Data* 2023;10:67.
-6. Huang K, Chandak P, Wang Q, et al. A foundation model for clinician-centered drug repurposing.
-   *Nature Medicine* 2024. `[verify volume and pages]`
+   *Scientific Data* 2023;10:67. doi:10.1038/s41597-023-01960-3
+6. Huang K, Chandak P, Wang Q, Havaldar S, Vaid A, Leskovec J, Nadkarni GN, Glicksberg BS,
+   Gehlenborg N, Zitnik M. A foundation model for clinician-centered drug repurposing.
+   *Nature Medicine* 2024;30(12):3601–3613. doi:10.1038/s41591-024-03233-x
 7. Guney E, Menche J, Vidal M, Barabási A-L. Network-based in silico drug efficacy screening.
-   *Nature Communications* 2016;7:10331.
-8. Bordes A, Usunier N, Garcia-Durán A, Weston J, Yakhnenko O. Translating embeddings for
-   modeling multi-relational data. *NIPS* 2013.
+   *Nature Communications* 2016;7:10331. doi:10.1038/ncomms10331
+8. Bordes A, Usunier N, Garcia-Duran A, Weston J, Yakhnenko O. Translating embeddings for
+   modeling multi-relational data. In: *Advances in Neural Information Processing Systems 26*
+   (NIPS 2013).
 9. Yang B, Yih W, He X, Gao J, Deng L. Embedding entities and relations for learning and
-   inference in knowledge bases. *ICLR* 2015.
+   inference in knowledge bases. arXiv:1412.6575 (2014); presented at ICLR 2015.
 10. Trouillon T, Welbl J, Riedel S, Gaussier É, Bouchard G. Complex embeddings for simple link
-    prediction. *ICML* 2016.
-11. Vasilevsky NA, Matentzoglu NA, Toro S, et al. Mondo: unifying diseases for the world, by the
-    world. *medRxiv* 2022. `[verify — check for the peer-reviewed version]`
-12. Seal RL, Braschi B, Gray K, et al. Genenames.org: the HGNC resources in 2023.
-    *Nucleic Acids Research* 2023;51:D1003–D1009. `[verify pages]`
+    prediction. In: *Proceedings of the 33rd International Conference on Machine Learning*
+    (ICML 2016). arXiv:1606.06357
+11. Vasilevsky NA, Toro S, Matentzoglu N, Flack JE, et al. Mondo: integrating disease
+    terminology across communities. *Genetics* 2026;232(4). doi:10.1093/genetics/iyaf215
+12. Seal RL, Braschi B, Gray K, Jones TEM, et al. Genenames.org: the HGNC resources in 2023.
+    *Nucleic Acids Research* 2023;51(D1):D1003–D1009. doi:10.1093/nar/gkac888
 13. ClinicalTrials.gov. National Library of Medicine. API v2. Accessed 2026-10-20.
-14. Wishart DS, Feunang YD, Guo AC, et al. DrugBank 5.0: a major update to the DrugBank database
-    for 2018. *Nucleic Acids Research* 2018;46:D1074–D1082.
+14. Wishart DS, Feunang YD, Guo AC, Lo EJ, et al. DrugBank 5.0: a major update to the DrugBank
+    database for 2018. *Nucleic Acids Research* 2018;46(D1):D1074–D1082.
+    doi:10.1093/nar/gkx1037
 
-> **Reference policy for this manuscript.** Given that the paper reports fabricated citations as
-> a finding, every entry above must be opened and checked against the published record before
-> submission, and entries marked `[verify]` are not yet so checked. None should be copied from a
-> summary.
+> **Reference audit (2026-10-21).** Every entry above was resolved against an authoritative
+> record — Crossref, PubMed, arXiv, OpenAlex, the NIPS 2013 proceedings index or the publisher
+> page — rather than a secondary summary. The audit changed three entries:
+>
+> * **Reference 3 was wrong.** An earlier draft cited arXiv:2311.12670 under the title "On the
+>   reliability of drug–target interaction benchmarking and data leakage", which is not its
+>   title. The identifier belongs to de la Fuente *et al.*, "Towards a more inductive world for
+>   drug repurposing approaches". The claim it supports — that transductive DTI evaluation
+>   inflates performance — is in that paper, but the citation as written was a fabrication of the
+>   kind this manuscript measures, and it survived two drafts. It is recorded here rather than
+>   quietly corrected.
+> * **Reference 11** now cites the peer-reviewed version in *Genetics* (2026) in place of the
+>   2022 medRxiv preprint.
+> * **Reference 6** gained the volume and pages that were marked for checking.
+>
+> One wording check also came out of the audit: reference 2's abstract says "over fifty dataset
+> configurations", so Section 2 says that rather than a precise count taken from a summary.
 
 ## Appendix A Reproduction
 

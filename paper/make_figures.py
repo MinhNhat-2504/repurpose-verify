@@ -1,0 +1,194 @@
+"""Generate the manuscript's figures from the stored artefacts.
+
+    python paper/make_figures.py
+
+Reads runs/report_full/summary.csv and runs/report_external/*.json; writes PNG and PDF into
+paper/figures/. Every value plotted comes from a file check_numbers.py also verifies, so a
+figure cannot drift from the text.
+"""
+
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+import matplotlib
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt  # noqa: E402
+import pandas as pd  # noqa: E402
+
+ROOT = Path(__file__).resolve().parents[1]
+OUT = ROOT / "paper" / "figures"
+FULL = ROOT / "runs" / "report_full" / "summary.csv"
+EXTERNAL = [ROOT / "runs" / "report_external" / "moa.json",
+            ROOT / "runs" / "report_external" / "literature.json"]
+
+LABELS = {
+    "qwen25-7b__closed_book": "closed book",
+    "qwen25-7b__rag_verify-none": "RAG, no verifier",
+    "qwen25-7b__rag_verify-revise": "RAG + verify",
+    "popularity": "popularity",
+    "proximity": "proximity",
+    "complex": "ComplEx",
+}
+# One accent for the systems the paper contrasts, grey for the baselines that need no tokens.
+COLOURS = {
+    "qwen25-7b__closed_book": "#c2410c",
+    "qwen25-7b__rag_verify-none": "#b45309",
+    "qwen25-7b__rag_verify-revise": "#15803d",
+    "popularity": "#525252",
+    "proximity": "#737373",
+    "complex": "#a3a3a3",
+}
+plt.rcParams.update({
+    "font.size": 9, "axes.titlesize": 10, "axes.labelsize": 9,
+    "axes.spines.top": False, "axes.spines.right": False,
+    "figure.dpi": 200, "savefig.bbox": "tight",
+})
+
+
+def save(fig: plt.Figure, name: str) -> None:
+    OUT.mkdir(parents=True, exist_ok=True)
+    for ext in ("png", "pdf"):
+        fig.savefig(OUT / f"{name}.{ext}")
+    plt.close(fig)
+    print(f"  wrote paper/figures/{name}.png (+pdf)")
+
+
+# Label placement is set per point: the systems sit close enough together that automatic
+# offsets collide, and an overlapping label is worse than no figure.
+LABEL_OFFSETS = {
+    "qwen25-7b__closed_book": (-10, 10, "right"),
+    "qwen25-7b__rag_verify-none": (9, -12, "left"),
+    "qwen25-7b__rag_verify-revise": (9, 7, "left"),
+    "popularity": (9, 0, "left"),
+    "proximity": (9, 2, "left"),
+    "complex": (9, -3, "left"),
+}
+
+
+def fig_faithfulness_vs_accuracy(full: pd.DataFrame) -> None:
+    """The paper's argument in one picture: the two axes do not move together."""
+    fig, ax = plt.subplots(figsize=(5.2, 3.6))
+    # The baselines emit no mechanism at all, so they have no fabrication rate. They are drawn
+    # in a banded strip left of the axis break, never at x = 0, which would read as "never
+    # fabricates" rather than "makes no checkable claim".
+    band = -0.026
+    ax.axvspan(band - 0.011, band + 0.011, color="#f5f5f4", zorder=0)
+    ax.axvline(band + 0.014, color="#d4d4d4", linestyle=(0, (3, 3)), linewidth=0.9, zorder=1)
+    ax.text(band, 0.0012, "no mechanism\nemitted", ha="center", va="bottom", fontsize=7.5,
+            color="#8a8a8a", linespacing=1.2)
+    for system, row in full.iterrows():
+        fab = row["fabricated_edge_rate"]
+        has_claims = fab == fab
+        x = fab if has_claims else band
+        dx, dy, ha = LABEL_OFFSETS.get(system, (9, 3, "left"))
+        colour = COLOURS.get(system, "#525252")
+        ax.scatter(x, row["mrr"], s=95, marker="o" if has_claims else "D",
+                   facecolor=colour if has_claims else "none", edgecolor=colour,
+                   linewidth=1.6, zorder=3)
+        ax.annotate(LABELS.get(system, system), (x, row["mrr"]), textcoords="offset points",
+                    xytext=(dx, dy), fontsize=8, color=colour, ha=ha)
+    ax.set_xlabel("fabricated mechanism edges  (lower is better)")
+    ax.set_ylabel("MRR  (higher is better)")
+    ax.set_title("Faithfulness and accuracy do not move together")
+    ax.set_xlim(-0.044, 0.26)
+    ax.set_ylim(0, 0.035)
+    ax.set_xticks([0.0, 0.05, 0.10, 0.15, 0.20])
+    ax.grid(axis="y", color="#e5e5e5", linewidth=0.6, zorder=0)
+    save(fig, "fig1_faithfulness_vs_accuracy")
+
+
+def fig_verification_effect(full: pd.DataFrame) -> None:
+    """What verification changes, and what it leaves alone."""
+    systems = ["qwen25-7b__closed_book", "qwen25-7b__rag_verify-none",
+               "qwen25-7b__rag_verify-revise"]
+    systems = [s for s in systems if s in full.index]
+    panels = [("fabricated_edge_rate", "fabricated edges"),
+              ("unresolvable_edge_rate", "unresolvable endpoints"),
+              ("hit@20", "Hit@20")]
+    # The popularity baseline belongs on the ranking panel, and the panel has to be scaled to
+    # show it: drawn above an axis limit set from the systems alone, the single most important
+    # comparison in the paper would sit outside the frame.
+    reference = full.loc["popularity", "hit@20"] if "popularity" in full.index else None
+    fig, axes = plt.subplots(1, 3, figsize=(7.4, 2.7))
+    for ax, (col, title) in zip(axes, panels):
+        values = [full.loc[s, col] for s in systems]
+        ceiling = max(values + ([reference] if col == "hit@20" and reference else []))
+        ax.bar(range(len(systems)), values,
+               color=[COLOURS[s] for s in systems], width=0.62, zorder=3)
+        for i, v in enumerate(values):
+            ax.text(i, v, f"{v:.3f}", ha="center", va="bottom", fontsize=8)
+        ax.set_xticks(range(len(systems)))
+        ax.set_xticklabels([LABELS[s].replace(", ", ",\n").replace(" + ", " +\n")
+                            for s in systems], fontsize=8)
+        ax.set_title(title)
+        ax.set_ylim(0, ceiling * 1.32 if ceiling > 0 else 1)
+        ax.grid(axis="y", color="#e5e5e5", linewidth=0.6, zorder=0)
+    if reference:
+        axes[2].axhline(reference, color="#525252", linestyle="--", linewidth=1.2, zorder=4)
+        axes[2].text(len(systems) - 0.72, reference * 1.03,
+                     f"popularity baseline  {reference:.3f}",
+                     va="bottom", ha="right", fontsize=8, color="#525252")
+    fig.suptitle("Verification moves faithfulness, not ranking", y=1.04, fontsize=10)
+    save(fig, "fig2_verification_effect")
+
+
+def fig_moa_by_role(ext: dict) -> None:
+    """Independent confirmation of drug-target claims, by the role the graph assigns the edge."""
+    primary = "qwen25-7b__rag_verify-revise"
+    moa = (ext.get(primary) or {}).get("moa")
+    if not moa or not moa.get("edges_by_role"):
+        print("  skipping fig3: no MoA results")
+        return
+    roles = ["target", "enzyme", "transporter", "carrier"]
+    roles = [r for r in roles if r in moa["edges_by_role"]]
+    conf = moa.get("confirmation_by_role", {})
+    counts = [moa["edges_by_role"][r] for r in roles]
+    rates = [conf.get(r, float("nan")) for r in roles]
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(7.4, 2.9),
+                                   gridspec_kw={"width_ratios": [1, 1.1]})
+    for ax in (ax1, ax2):
+        ax.tick_params(axis="x", labelsize=8)
+    ax1.bar(roles, counts, color=["#15803d"] + ["#a3a3a3"] * (len(roles) - 1),
+            width=0.62, zorder=3)
+    for i, c in enumerate(counts):
+        ax1.text(i, c, f"{c:,}", ha="center", va="bottom", fontsize=8)
+    ax1.set_title("edges asserted, by graph role")
+    ax1.set_ylim(0, max(counts) * 1.25)
+    ax1.grid(axis="y", color="#e5e5e5", linewidth=0.6, zorder=0)
+
+    ax2.bar(roles, [0 if r != r else r for r in rates],
+            color=["#15803d"] + ["#c2410c"] * (len(roles) - 1), width=0.62, zorder=3)
+    for i, r in enumerate(rates):
+        ax2.text(i, 0 if r != r else r, f"{r:.3f}" if r == r else "n/a",
+                 ha="center", va="bottom", fontsize=8)
+    ax2.set_title("confirmed by ChEMBL mechanism of action")
+    ax2.set_ylim(0, 0.68)
+    ax2.grid(axis="y", color="#e5e5e5", linewidth=0.6, zorder=0)
+    fig.suptitle("Only target-role edges are mechanisms of action", y=1.05, fontsize=10)
+    save(fig, "fig3_moa_by_role")
+
+
+def main() -> int:
+    if not FULL.exists():
+        print(f"missing {FULL.relative_to(ROOT)} - run the evaluation first")
+        return 2
+    full = pd.read_csv(FULL).set_index("system")
+    ext: dict = {}
+    for path in EXTERNAL:
+        if path.exists():
+            for system, res in json.loads(path.read_text(encoding="utf-8")).items():
+                ext.setdefault(system, {}).update({k: v for k, v in res.items() if v})
+    print("Figures:")
+    fig_faithfulness_vs_accuracy(full)
+    fig_verification_effect(full)
+    fig_moa_by_role(ext)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
