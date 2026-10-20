@@ -102,7 +102,7 @@ def evaluate_runs(gt: GroundTruth, run_dirs: list[Path], ks: list[int], n_boot: 
 
 def _fmt(v, digits=3):
     if isinstance(v, float):
-        return "–" if np.isnan(v) else f"{v:.{digits}f}"
+        return "-" if np.isnan(v) else f"{v:.{digits}f}"
     return str(v)
 
 
@@ -116,7 +116,7 @@ def write_report(results: dict, out_dir: Path, ks: list[int], title: str) -> Pat
         results["comparisons"].to_csv(out_dir / "comparisons.csv", index=False)
     kmax = max(ks)
     lines = [f"# {title}", "",
-             f"Diseases: {results['n_diseases']} · positive pairs: {results['n_positive_pairs']}",
+             f"Diseases: {results['n_diseases']} | positive pairs: {results['n_positive_pairs']}",
              "", "## Ranking (filtered, 95% bootstrap CI)", "",
              "| System | Model (cutoff) | MRR | " + " | ".join(f"Hit@{k}" for k in ks) + " | Coverage |",
              "|---|---|---|" + "---|" * len(ks) + "---|"]
@@ -156,7 +156,7 @@ def write_report(results: dict, out_dir: Path, ks: list[int], title: str) -> Pat
     c = results["comparisons"]
     if len(c):
         lines += ["", "## Paired bootstrap vs reference", "",
-                  "| System | Metric | Reference − system | 95% CI | p |", "|---|---|---|---|---|"]
+                  "| System | Metric | Reference minus system | 95% CI | p |", "|---|---|---|---|---|"]
         for r in c.to_dict("records"):
             lines.append(f"| {r['system']} | {r['metric']} | {_fmt(r['diff'])} | "
                          f"[{_fmt(r['lo'])}, {_fmt(r['hi'])}] | {_fmt(r['p'])} |")

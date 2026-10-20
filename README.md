@@ -48,19 +48,28 @@ Ranking ~8,000 drugs for an average of 2.8 unseen positives per disease is hard,
 
 ### What the verifier finds (12-disease pilot, qwen2.5-7b, 16k context)
 
-| System | Proposals | Verified | **Fabricated** | Unresolvable | Unverified |
+| System | Proposals | Verified | **Fabricated** | Unresolvable | Invalid citations |
 |---|---|---|---|---|---|
-| closed book (no retrieval) | 213 | 0.000 | **0.144** | 0.670 | 0.814 |
-| RAG + verify-revise | 136 | 0.926 | **0.031** | 0.000 | 0.031 |
+| closed book (no retrieval) | 213 | 0.000 | **0.144** | 0.670 | – (cited nothing) |
+| RAG, no verifier | 173 | 0.705 | **0.228** | 0.000 | **1.000** (20 of 20) |
+| RAG + verify-revise | 136 | 0.926 | **0.031** | 0.000 | – (cited nothing) |
 
-Reading the two columns apart is the point:
+Two results, both measured rather than assumed:
+
+**Verification cuts fabricated edges 7×, from 0.228 to 0.031.** Giving the agent graph tools is not what makes it faithful — unverified, it still asserts 23% of its mechanism edges without support. Checking each edge and handing the rejects back for one revision round is what moves the number.
+
+**Every citation the unverified agent produced was fake.** It attached 20 PMIDs across its proposals and never once called `search_pubmed`; the ids were sequential placeholders — `PMID12345`, `PMID12346`, `PMID12347` … — so all 20 failed the check. This is exactly the failure mode the benchmark exists to catch, and it is invisible to any evaluation that reads citations without resolving them.
+
+A note on what this pilot cannot show: all six systems, baselines included, score Hit@K = 0 on these 12 diseases, which are mostly rare genetic disorders. Over the full 200-disease set the same baselines reach Hit@20 = 0.085, so ranking differences need the full run — faithfulness is measurable at pilot scale, ranking is not. Neither agent configuration called `search_pubmed` at all; both leaned entirely on `find_mechanism_paths` (144 and 161 calls).
+
+Reading the fabricated and unresolvable columns apart is the point:
 
 * **Fabricated** edges are the model's own claims about real entities that nothing supports. The closed-book model asserts `COX-2 → ataxia telangiectasia` nine times, `serotonin → Sandhoff disease`, and — in the same run — both `Metformin activates AMPK` and `Metformin inhibits AMPK`.
 * **Unresolvable** edges are the larger failure and a different one: two thirds of closed-book mechanism endpoints are prose, not entities — "inflammation", "oxidative stress", "excitotoxicity", "bone growth and development". The claims may be true; they cannot be checked against any structured source, which is what a reviewer is entitled to ask for.
 
 An earlier version of this table reported 0.953 "fabricated" for closed book. That number was wrong, and the way it was wrong is worth recording: "COX-2" is not an invented entity, it is PTGS2 under the name every pharmacologist uses. Grounding now loads HGNC alias symbols (44,495 genes, joined on NCBI gene id — never by name, because a substring search for "COX-2" returns COX2, a mitochondrial subunit of a different protein) and a small curated pin file for the few aliases where HGNC itself disagrees with drug-mechanism usage (`data/manual/gene_aliases.csv`; HGNC lists COX-2 as an alias of *PTGER2*). Mentions that still match several nodes are reported as *ambiguous* rather than silently resolved, because a wrong grounding could turn an invented edge into a supported one.
 
-A caveat on the high verified rate: with `find_mechanism_paths` available, the agent largely submits paths the tool handed it, so verification is close to automatic. The informative contrast is against the systems that lack the tool, which is what the ablations are for — not the absolute rate.
+A caveat on the high verified rate: with `find_mechanism_paths` available, the agent largely submits paths the tool handed it, so verification is close to automatic for the proposals it keeps. The informative quantities are the differences between configurations — 0.228 → 0.031 fabricated with verification on, 0.670 unresolvable without tools — not the absolute rate.
 
 ## Systems and ablations
 
