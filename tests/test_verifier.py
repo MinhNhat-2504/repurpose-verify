@@ -1,6 +1,7 @@
 from datetime import date
 
 from repurpose_verify.verify.schema import Proposal
+from repurpose_verify.data.kg import GENE
 from repurpose_verify.verify.verifier import MechanismVerifier
 
 CUTOFF = date(2021, 12, 31)
@@ -30,6 +31,19 @@ def test_unsupported_and_ungrounded(kg):
     res = v.verify(prop("metformin", ("metformin", "inhibits", "FAKEGENE9"),
                         ("FAKEGENE9", "drives", "colorectal cancer")), 9)
     assert [e.status for e in res.edges] == ["ungrounded", "ungrounded"]
+
+
+def test_unresolvable_is_not_fabrication(kg):
+    """Prose endpoints ("inflammation") are unresolvable, not fabricated claims."""
+    v = MechanismVerifier(kg, CUTOFF)
+    res = v.verify(prop("celecoxib", ("Celecoxib", "reduces", "inflammation"),
+                        ("inflammation", "drives", "colorectal cancer")), 9)
+    assert [e.status for e in res.edges] == ["ungrounded", "ungrounded"]
+    assert res.n_fabricated == 0 and res.n_unresolvable == 2
+    # Whereas a link between two real nodes with no evidence is a fabricated claim.
+    res = v.verify(prop("metformin", ("Metformin", "inhibits", "PTGS2"),
+                        ("PTGS2", "associated with", "colorectal cancer")), 9)
+    assert res.n_fabricated == 1 and res.n_unresolvable == 0
 
 
 def test_circular_and_structure(kg):
@@ -73,6 +87,31 @@ def test_name_id_mismatch(kg):
     assert v.verify(prop("Celecoxib [kg:1]", ("Celecoxib [kg:1]", "inhibits", "kg:4"),
                          ("PTGS2 (COX-2) [kg:4]", "associated with", "colorectal cancer [kg:9]")),
                     9).verified
+
+
+def test_ambiguous_endpoint_is_not_fabricated(kg):
+    """A name matching two nodes is reported as ambiguous, never as an invented entity."""
+    kg._ensure_index()
+    # Give PTGS2 and ABL1 the same alias, as HGNC does for several historical symbols.
+    kg._synonyms[4].append("DUPSYM")
+    kg._synonyms[5].append("DUPSYM")
+    kg._name_index = None
+    v = MechanismVerifier(kg, CUTOFF)
+    res = v.verify(prop("celecoxib", ("Celecoxib", "inhibits", "DUPSYM"),
+                        ("DUPSYM", "associated with", "colorectal cancer")), 9)
+    assert [e.status for e in res.edges] == ["ambiguous", "ambiguous"]
+    assert res.n_fabricated == 0 and not res.verified
+    assert "several nodes" in res.edges[0].detail
+    # An exact primary-name match still wins over a shared alias.
+    assert v.ground("PTGS2", (GENE,)) == 4
+
+
+def test_curated_override_pins_a_mention(kg):
+    kg.attach_overrides({"COX-2": 4})
+    v = MechanismVerifier(kg, CUTOFF)
+    assert v.ground("COX-2", (GENE,)) == 4
+    assert v.verify(prop("celecoxib", ("Celecoxib", "inhibits", "COX-2"),
+                         ("COX-2", "associated with", "colorectal cancer")), 9).verified
 
 
 def test_node_list_paths(kg):

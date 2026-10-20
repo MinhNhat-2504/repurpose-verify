@@ -54,6 +54,13 @@ def name_variants(text: str) -> list[str]:
         inner = norm(m.group(1) or m.group(2) or "")
         if inner and inner not in out:
             out.append(inner)
+    # Symbols are written with and without separators: COX-2 / COX 2 / COX2, IL-6 / IL6.
+    # Only short mentions are squashed, so multi-word disease names are left alone.
+    for n in list(out):
+        if n.count(" ") <= 2 and len(n) <= 24:
+            squashed = n.replace(" ", "")
+            if squashed and squashed not in out:
+                out.append(squashed)
     return out
 
 

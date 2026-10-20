@@ -28,6 +28,8 @@ def cmd_download(ctx: Context, args) -> None:
             download(cfg["kg"]["edges_url"], cfg.path("kg", "edges_file"))
     if args.what in ("mondo", "all"):
         download(cfg["kg"]["mondo_url"], cfg.path("kg", "mondo_file"))
+    if args.what in ("hgnc", "all"):
+        download(cfg["kg"]["hgnc_url"], cfg.path("kg", "hgnc_file"))
 
 
 def cmd_build_kg(ctx: Context, args) -> None:
@@ -61,7 +63,8 @@ def cmd_build_gt(ctx: Context, args) -> None:
         ctx.kg, pre, post, cfg.cutoff, cfg.eval_end, single_drug=g["single_drug_trials"],
         post_phases=g["post_phases"], manual_path=cfg.path("groundtruth", "manual_approvals"),
         fuzzy=g.get("fuzzy_threshold", 0), n_eval=g.get("n_eval_diseases", 0),
-        min_pos=g.get("min_positives_per_disease", 1), seed=g.get("seed", 13))
+        min_pos=g.get("min_positives_per_disease", 1),
+        min_disease_genes=g.get("min_disease_genes", 0), seed=g.get("seed", 13))
     report.update(n_pre_trials=len(pre), n_post_trials=len(post))
     gt.save(cfg.path("groundtruth", "out_dir"), report)
     print(json.dumps({k: v for k, v in report.items() if k != "unmapped_manual_approvals"},
@@ -185,6 +188,45 @@ def cmd_agent(ctx: Context, args) -> None:
     print(f"Run written to {out}")
 
 
+def cmd_reverify(ctx: Context, args) -> None:
+    """Re-score saved proposals with the current verifier, leaving the LLM calls untouched."""
+    from .agent.agent import AgentSettings, RepurposingAgent
+    from .utils import read_jsonl, write_jsonl
+    from .verify.schema import Proposal
+
+    ver = ctx.verifier()
+    kg = ctx.masked_kg()
+    for run_dir in (Path(r) for r in args.runs):
+        path = run_dir / "rankings.jsonl"
+        records = list(read_jsonl(path))
+        meta = json.loads((run_dir / "meta.json").read_text(encoding="utf-8")) \
+            if (run_dir / "meta.json").exists() else {}
+        settings = AgentSettings(**meta.get("settings", {})) if meta.get("settings") \
+            else AgentSettings(mode="rag", verifier="none")
+        agent = RepurposingAgent.__new__(RepurposingAgent)   # ranking logic only, no LLM
+        agent.kg, agent.s = kg, settings
+        before = after = 0
+        for rec in records:
+            props = [Proposal.from_any(p) for p in rec.get("proposals", [])]
+            checks = [ver.verify(p, int(rec["disease_idx"])) for p in props]
+            before += sum(bool(p.get("verification", {}).get("verified"))
+                          for p in rec.get("proposals", []))
+            after += sum(c.verified for c in checks)
+            rec["proposals"] = [{**p.to_dict(), "verification": c.to_dict()}
+                                for p, c in zip(props, checks)]
+            rec["ranked"] = agent._rank(props, checks)
+        if args.in_place:
+            write_jsonl(path, records)
+            out = run_dir
+        else:
+            out = run_dir.parent / f"{run_dir.name}{args.suffix}"
+            write_jsonl(out / "rankings.jsonl", records)
+            (out / "meta.json").write_text(json.dumps(
+                {**meta, "run_name": out.name, "reverified_from": run_dir.name}, indent=2),
+                encoding="utf-8")
+        print(f"{run_dir.name}: verified proposals {before} -> {after}  (written to {out})")
+
+
 def cmd_probe(ctx: Context, args) -> None:
     from .agent.llm import make_client
     from .eval.leakage_probe import build_probe_items, run_probe, summarize_probe
@@ -209,8 +251,11 @@ def cmd_evaluate(ctx: Context, args) -> None:
         p.parent for p in ctx.cfg.runs_dir.glob("*/rankings.jsonl"))
     probe_keep = load_probe_mask(Path(args.probe)) if args.probe else None
     res = evaluate_runs(ctx.gt, run_dirs, ks, e.get("bootstrap", 1000), e.get("seed", 13),
-                        min_tier=args.min_tier, probe_keep=probe_keep, reference=args.reference)
+                        min_tier=args.min_tier, probe_keep=probe_keep, reference=args.reference,
+                        limit=args.limit)
     title = f"Time-split repurposing benchmark (cutoff {ctx.cfg.cutoff}, tier >= {args.min_tier}"
+    if args.limit:
+        title += f", first {args.limit} eval diseases"
     title += ", probe-masked)" if probe_keep is not None else ")"
     out = write_report(res, Path(args.out) if args.out else ctx.cfg.runs_dir / "report", ks, title)
     print(out.read_text(encoding="utf-8"))
@@ -221,7 +266,7 @@ def cmd_review(ctx: Context, args) -> None:
 
     if args.action == "export":
         sheet, key = export_review([Path(r) for r in args.runs], Path(args.out),
-                                   n_items=args.n_items)
+                                   n_items=args.n_items, kg=ctx.kg)
         print(f"Sheet for raters: {sheet}\nKey (keep hidden): {key}")
     else:
         print(json.dumps(score_review(Path(args.sheet_a), Path(args.sheet_b), Path(args.key)),
@@ -250,7 +295,7 @@ def build_parser() -> argparse.ArgumentParser:
     sub = p.add_subparsers(dest="cmd", required=True)
 
     s = sub.add_parser("download", help="download PrimeKG and/or MONDO")
-    s.add_argument("what", choices=["kg", "mondo", "all"], nargs="?", default="all")
+    s.add_argument("what", choices=["kg", "mondo", "hgnc", "all"], nargs="?", default="all")
     s.add_argument("--kg-csv", action="store_true",
                    help="fetch the 982 MB kg.csv instead of nodes.tab + edges.csv (395 MB)")
     s.set_defaults(fn=cmd_download)
@@ -305,6 +350,12 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--run-name")
     s.set_defaults(fn=cmd_agent)
 
+    s = sub.add_parser("reverify", help="re-score saved runs with the current verifier")
+    s.add_argument("runs", nargs="+")
+    s.add_argument("--in-place", action="store_true")
+    s.add_argument("--suffix", default="_rv")
+    s.set_defaults(fn=cmd_reverify)
+
     s = sub.add_parser("probe", help="weight-level knowledge leakage probe")
     s.add_argument("--model", required=True)
     s.add_argument("--controls", type=int, default=200)
@@ -318,6 +369,8 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--min-tier", choices=["phase2", "phase3", "phase4", "approved"], default="phase2")
     s.add_argument("--probe", help="probe jsonl: evaluate only pairs the model does not know")
     s.add_argument("--reference", help="system name for paired bootstrap comparisons")
+    s.add_argument("--limit", type=int,
+                   help="score only the first N evaluation diseases (matches agent --limit)")
     s.set_defaults(fn=cmd_evaluate)
 
     s = sub.add_parser("review", help="blinded pharmacist review")

@@ -37,12 +37,16 @@ def load_probe_mask(path: Path) -> set[tuple[int, int]]:
 
 def evaluate_runs(gt: GroundTruth, run_dirs: list[Path], ks: list[int], n_boot: int = 1000,
                   seed: int = 13, min_tier: str = "phase2", probe_keep: set | None = None,
-                  reference: str | None = None) -> dict:
+                  reference: str | None = None, limit: int | None = None) -> dict:
     positives = gt.positives_by_disease(min_tier)
     if probe_keep is not None:
         positives = {d: {x for x in s if (x, d) in probe_keep} for d, s in positives.items()}
     known = gt.known_by_disease()
-    diseases = [int(d) for d in gt.eval_diseases["disease_idx"] if positives.get(int(d))]
+    ids = [int(d) for d in gt.eval_diseases["disease_idx"]]
+    if limit:
+        # Same prefix the agent's --limit takes, so a pilot is scored only on what it ran.
+        ids = ids[:limit]
+    diseases = [d for d in ids if positives.get(d)]
     summary, per_rows, metric_arrays = [], [], {}
     for run_dir in run_dirs:
         name, meta, recs = load_run(run_dir)
@@ -122,15 +126,24 @@ def write_report(results: dict, out_dir: Path, ks: list[int], title: str) -> Pat
         lines.append(f"| {r['system']} | {r['model']} ({r['knowledge_cutoff'] or '?'}) | "
                      + " | ".join(cells) + f" | {_fmt(r['coverage'], 2)} |")
     lines += ["", "## Mechanism faithfulness", "",
-              "| System | Proposals | Verified | Fabricated edges | Unsupported | Ungrounded | "
-              "Circular | Invalid citations |", "|---|---|---|---|---|---|---|---|"]
+              "**Fabricated** = both endpoints resolve to real entities but no admissible "
+              "evidence links them (unsupported), or the only link is the drug-disease label "
+              "itself (circular): a checkable claim the evidence base contradicts. "
+              "**Unresolvable** = the endpoint does not pin down one node of an acceptable type "
+              "(ungrounded, or ambiguous across nodes) - usually a process written as prose, so "
+              "the claim is not checkable rather than false. The two are reported apart, since "
+              "merging them overstates fabrication.", "",
+              "| System | Proposals | Verified | Fabricated | Unsupported | Circular | "
+              "Unresolvable | Ungrounded | Ambiguous | Unverified | Invalid citations |",
+              "|---|---|---|---|---|---|---|---|---|---|---|"]
     for r in s.to_dict("records"):
         if not r.get("proposals"):
             continue
         lines.append(f"| {r['system']} | {r['proposals']} | {_fmt(r['verified_rate'])} | "
-                     f"{_fmt(r['fabricated_edge_rate'])} | {_fmt(r['unsupported_edge_rate'])} | "
-                     f"{_fmt(r['ungrounded_edge_rate'])} | {_fmt(r['circular_edge_rate'])} | "
-                     f"{_fmt(r['invalid_citation_rate'])} |")
+                     f"**{_fmt(r['fabricated_edge_rate'])}** | {_fmt(r['unsupported_edge_rate'])} | "
+                     f"{_fmt(r['circular_edge_rate'])} | {_fmt(r['unresolvable_edge_rate'])} | "
+                     f"{_fmt(r['ungrounded_edge_rate'])} | {_fmt(r['ambiguous_edge_rate'])} | "
+                     f"{_fmt(r['unverified_edge_rate'])} | {_fmt(r['invalid_citation_rate'])} |")
     lines += ["", f"## Cost (correct hits counted in top-{kmax})", "",
               "| System | Input tok | Output tok | USD | Tokens / correct hit | USD / correct hit |",
               "|---|---|---|---|---|---|"]

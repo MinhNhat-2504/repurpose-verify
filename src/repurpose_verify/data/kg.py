@@ -138,6 +138,7 @@ class KnowledgeGraph:
         self._synonyms: dict[int, list[str]] = defaultdict(list)
         self._sparse: dict[str, object] = {}
         self._trigrams: dict[str, dict[str, list[str]]] = {}
+        self._overrides: dict[str, int] = {}
         self._index_lock = threading.Lock()
 
     # ------------------------------------------------------------------ construction
@@ -248,6 +249,32 @@ class KnowledgeGraph:
                     self._mesh_index.setdefault(mesh.upper(), []).append(i)
         self._name_index = None
 
+    def attach_overrides(self, mention_to_node: dict[str, int]) -> None:
+        """Pin specific mentions to specific nodes, ahead of any name or alias lookup.
+
+        For a handful of pharmacology-standard aliases the curated sources disagree with usage:
+        HGNC lists "COX-2" as an alias of PTGER2, while in drug mechanism text it always means
+        PTGS2. Those cases are resolved from an explicit, citable file rather than silently.
+        """
+        for mention, idx in mention_to_node.items():
+            for v in name_variants(mention):
+                self._overrides[v] = int(idx)
+
+    def attach_gene_aliases(self, aliases_by_entrez: dict[str, list[str]]) -> int:
+        """Add HGNC alias symbols to gene nodes, joined on NCBI gene id."""
+        added = 0
+        for i in self.nodes_of_type(GENE):
+            row = self.nodes.iloc[int(i)]
+            if str(row["source"]).upper() != "NCBI":
+                continue
+            extra = aliases_by_entrez.get(str(row["id"]).strip())
+            if extra:
+                self._synonyms[int(i)].extend(extra)
+                added += len(extra)
+        if added:
+            self._name_index = None
+        return added
+
     def _ensure_index(self) -> None:
         # The agent runs several diseases in parallel against one shared graph, so the index is
         # built under a lock and published last: _name_index is the flag the fast path checks.
@@ -314,6 +341,10 @@ class KnowledgeGraph:
         if m.lower().startswith("kg:") and m[3:].isdigit():
             i = int(m[3:])
             return [i] if 0 <= i < self.n and (not node_type or self.types[i] == node_type) else []
+        for v in (drug_variants(m) if node_type == DRUG else name_variants(m)):
+            pinned = self._overrides.get(v)
+            if pinned is not None and (not node_type or self.types[pinned] == node_type):
+                return [pinned]
         key = m.upper()
         if key.startswith("MESH:"):
             key = key[5:]
@@ -322,13 +353,16 @@ class KnowledgeGraph:
         if hits:
             return list(dict.fromkeys(hits))[:limit]
         variants = drug_variants(m) if node_type == DRUG else name_variants(m)
+        # Every variant is consulted, not just the first that matches: stopping early hides
+        # the fact that a mention such as "COX-2" matches several genes, and the ambiguity is
+        # what the verifier needs to see.
         for v in variants:
             for t in types:
                 found = self._name_index.get(t, {}).get(v)
                 if found:
                     hits.extend(found)
-            if hits:
-                return list(dict.fromkeys(hits))[:limit]
+        if hits:
+            return list(dict.fromkeys(hits))[:limit]
         if fuzzy_threshold > 0:
             from rapidfuzz import fuzz, process
 
@@ -349,8 +383,12 @@ class KnowledgeGraph:
         hits = self.lookup(mention, node_type, fuzzy_threshold, limit=50)
         if not hits:
             return None
-        # Prefer the most connected node when a name is ambiguous.
-        return max(hits, key=self.degree)
+        # An official name wins over an alias: aliases are not unique across genes, so
+        # "COX2" must not outrank a node actually called COX2.
+        wanted = set(drug_variants(mention) if node_type == DRUG else name_variants(mention))
+        primary = [i for i in hits if norm(str(self.names[i])) in wanted]
+        # Otherwise prefer the most connected node.
+        return max(primary or hits, key=self.degree)
 
     def search(self, query: str, node_type: str | None = None, limit: int = 10) -> list[int]:
         """Lenient search for agent tools: exact, then substring, then fuzzy."""

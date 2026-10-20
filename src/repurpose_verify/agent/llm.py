@@ -81,8 +81,11 @@ class OpenAICompatClient(LLMClient):
         from openai import OpenAI
 
         key = os.environ.get(profile.get("api_key_env", "OPENAI_API_KEY"), "") or "not-needed"
+        # A stalled local server must not hold a run hostage: fail the request and let the SDK
+        # retry it rather than waiting out a ten-minute default.
         self.client = OpenAI(base_url=profile.get("base_url"), api_key=key,
-                             timeout=float(profile.get("timeout", 600)))
+                             timeout=float(profile.get("timeout", 240)),
+                             max_retries=int(profile.get("max_retries", 3)))
         self.temperature = float(profile.get("temperature", 0.0))
         self.seed = profile.get("seed")
 

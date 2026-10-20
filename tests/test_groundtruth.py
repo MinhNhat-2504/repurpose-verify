@@ -54,8 +54,25 @@ def test_time_split(kg):
     assert {(0, 8), (2, 10), (1, 9)} <= known
     assert list(gt.eval_diseases.disease_idx) == [9]
     assert report["leakage_check_positives_in_kg"] == 0
+    # metformin -> PRKAA1 -> TP53 -> colorectal cancer exists, so the pair is reachable
+    assert gt.positives.mechanism_reachable.tolist() == [True]
+    assert report["ceiling"] == {"positives_in_eval": 1, "drug_has_no_target": 0,
+                                 "mechanism_reachable": 1, "mechanism_reachable_rate": 1.0}
     assert gt.positives_by_disease("phase3") == {9: {0}}
     assert gt.positives_by_disease("approved") == {}
+
+
+def test_min_disease_genes_filter(kg):
+    """Diseases with no associated gene cannot host a mechanism path, so they are excluded."""
+    # Imatinib -> CML (disease 10 has gene ABL1); Celecoxib -> a gene-less disease would drop.
+    post = [trial("NCT_a", date(2023, 1, 5), ["PHASE2"], ["Celecoxib"], ["type 2 diabetes mellitus"]),
+            trial("NCT_b", date(2023, 1, 5), ["PHASE2"], ["Metformin"], ["chronic myeloid leukemia"])]
+    gt, report = build_groundtruth(kg, [], post, CUTOFF, END, min_disease_genes=50)
+    assert len(gt.positives) == 2 and list(gt.eval_diseases.disease_idx) == []
+    assert report["n_diseases_dropped_no_genes"] == 2 and report["n_diseases_eligible"] == 2
+    gt, report = build_groundtruth(kg, [], post, CUTOFF, END, min_disease_genes=1)
+    assert sorted(gt.eval_diseases.disease_idx) == [8, 10]
+    assert gt.eval_diseases.set_index("disease_idx").n_genes.to_dict() == {8: 1, 10: 1}
 
 
 def test_audit_mapping(kg):

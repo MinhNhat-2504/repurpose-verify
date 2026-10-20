@@ -262,6 +262,7 @@ def run_agent(agent_factory: Callable[[], RepurposingAgent], disease_ids: list[i
               workers: int = 1, meta: dict | None = None) -> Path:
     """Run every disease (resumable: diseases already in ``out_path`` are skipped)."""
     out_path = Path(out_path)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
     done = set()
     if out_path.exists():
         done = {r["disease_idx"] for r in read_jsonl(out_path)}

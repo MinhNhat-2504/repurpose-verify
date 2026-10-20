@@ -7,7 +7,8 @@ from functools import cached_property
 
 from .config import Config
 from .data.groundtruth import GroundTruth
-from .data.kg import KnowledgeGraph
+from .data.kg import GENE, KnowledgeGraph
+from .data.hgnc import parse_hgnc
 from .data.mondo import parse_mondo_obo
 from .data.opentargets import OpenTargetsClient
 from .data.pubmed import PubMedClient
@@ -29,7 +30,39 @@ class Context:
             kg.attach_mondo(parse_mondo_obo(mondo))
         else:
             log.warning("MONDO file missing (%s): disease grounding uses KG names only", mondo)
+        hgnc = self.cfg.path("kg", "hgnc_file")
+        if hgnc.exists():
+            n = kg.attach_gene_aliases(parse_hgnc(
+                hgnc, with_names=self.cfg["kg"].get("hgnc_alias_names", False)))
+            log.info("Attached %d HGNC alias symbols to gene nodes", n)
+        else:
+            log.warning("HGNC file missing (%s): gene aliases such as COX-2 will not resolve, "
+                        "which inflates the ungrounded-edge rate", hgnc)
+        self._attach_overrides(kg)
         return kg
+
+    def _attach_overrides(self, kg: KnowledgeGraph) -> None:
+        path = self.cfg.path("kg", "alias_overrides")
+        if not path.exists():
+            return
+        import pandas as pd
+
+        pins: dict[str, int] = {}
+        unresolved: list[str] = []
+        for row in pd.read_csv(path, dtype=str).fillna("").to_dict("records"):
+            mention, target = row["mention"].strip(), row["target"].strip()
+            if not mention or not target:
+                continue
+            idx = kg.resolve(target, GENE) if not target.lower().startswith("kg:") else \
+                kg.resolve(target)
+            if idx is None:
+                unresolved.append(f"{mention}->{target}")
+            else:
+                pins[mention] = idx
+        kg.attach_overrides(pins)
+        log.info("Pinned %d curated alias mentions", len(pins))
+        if unresolved:
+            log.warning("Alias overrides that do not resolve in this KG: %s", unresolved)
 
     @cached_property
     def gt(self) -> GroundTruth:

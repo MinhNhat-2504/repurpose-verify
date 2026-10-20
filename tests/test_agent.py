@@ -108,12 +108,12 @@ def test_run_agent_parallel_and_resumable(kg, tmp_path):
     from repurpose_verify.agent.agent import run_agent
     from repurpose_verify.utils import read_jsonl
 
-    out = tmp_path / "rankings.jsonl"
+    out = tmp_path / "run" / "rankings.jsonl"   # the run directory must be created for us
     factory = lambda: make_agent(kg, lambda *a: call("submit_proposals", proposals=[GOOD]),  # noqa: E731
                                  mode="rag", verifier="filter")
     run_agent(factory, [9, 10, 8], out, workers=3, meta={"run_name": "t"})
     assert {r["disease_idx"] for r in read_jsonl(out)} == {8, 9, 10}
-    assert json.loads((tmp_path / "meta.json").read_text())["run_name"] == "t"
+    assert json.loads((tmp_path / "run" / "meta.json").read_text())["run_name"] == "t"
 
     # A second call must skip the diseases already on disk and only add the new one.
     def boom():

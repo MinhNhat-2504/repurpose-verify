@@ -61,6 +61,7 @@ class Faithfulness:
     n_opentargets: int = 0
     n_unsupported: int = 0
     n_ungrounded: int = 0
+    n_ambiguous: int = 0
     n_circular: int = 0
     n_structure_bad: int = 0
     n_drug_ungrounded: int = 0
@@ -80,6 +81,7 @@ class Faithfulness:
             self.n_opentargets += st == "opentargets"
             self.n_unsupported += st == "unsupported"
             self.n_ungrounded += st == "ungrounded"
+            self.n_ambiguous += st == "ambiguous"
             self.n_circular += st == "circular"
             self.n_citations += len(e.get("pmids_admissible", [])) + len(e.get("pmids_invalid", []))
             self.n_citations_invalid += len(e.get("pmids_invalid", []))
@@ -87,13 +89,18 @@ class Faithfulness:
     def rates(self) -> dict[str, float]:
         def r(a, b):
             return a / b if b else float("nan")
-        fabricated = self.n_unsupported + self.n_ungrounded + self.n_circular
+        # See verify/verifier.py for why fabricated and unresolvable are separate.
+        fabricated = self.n_unsupported + self.n_circular
+        unresolvable = self.n_ungrounded + self.n_ambiguous
         return {
             "proposals": self.n_proposals,
             "verified_rate": r(self.n_verified, self.n_proposals),
             "fabricated_edge_rate": r(fabricated, self.n_edges),
+            "unresolvable_edge_rate": r(unresolvable, self.n_edges),
+            "unverified_edge_rate": r(fabricated + unresolvable, self.n_edges),
             "unsupported_edge_rate": r(self.n_unsupported, self.n_edges),
             "ungrounded_edge_rate": r(self.n_ungrounded, self.n_edges),
+            "ambiguous_edge_rate": r(self.n_ambiguous, self.n_edges),
             "circular_edge_rate": r(self.n_circular, self.n_edges),
             "kg_edge_rate": r(self.n_kg, self.n_edges),
             "literature_edge_rate": r(self.n_literature, self.n_edges),

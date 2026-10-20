@@ -24,7 +24,16 @@ from .schema import Proposal
 
 _KG_REF = re.compile(r"kg:(\d+)", re.I)
 SUPPORTED = ("kg", "literature", "opentargets")
-FABRICATED = ("unsupported", "ungrounded", "circular")
+# Two distinct failures, kept apart because they mean different things about a model.
+#   FABRICATED   both endpoints resolve to real entities and no admissible evidence links them,
+#                or the only link is the drug-disease label itself: a checkable claim that the
+#                evidence base contradicts. This is the fabrication signal.
+#   UNRESOLVABLE the endpoint cannot be pinned to one node of an acceptable type - typically a
+#                process written as prose ("inflammation", "oxidative stress") or an informal
+#                receptor name. The claim may be true; it is simply not checkable against this
+#                vocabulary, so counting it as fabrication would overstate the result.
+FABRICATED = ("unsupported", "circular")
+UNRESOLVABLE = ("ungrounded", "ambiguous")
 MIDDLE_TYPES = (GENE, "pathway", "biological_process", "molecular_function", "effect/phenotype",
                 "cellular_component", "anatomy", "exposure", DISEASE, DRUG)
 
@@ -64,6 +73,10 @@ class Verification:
     def n_fabricated(self) -> int:
         return sum(e.status in FABRICATED for e in self.edges)
 
+    @property
+    def n_unresolvable(self) -> int:
+        return sum(e.status in UNRESOLVABLE for e in self.edges)
+
     def summary(self) -> str:
         if self.verified:
             return "verified"
@@ -72,7 +85,8 @@ class Verification:
 
     def to_dict(self) -> dict:
         d = asdict(self)
-        d.update(n_edges=self.n_edges, n_supported=self.n_supported, n_fabricated=self.n_fabricated)
+        d.update(n_edges=self.n_edges, n_supported=self.n_supported,
+                 n_fabricated=self.n_fabricated, n_unresolvable=self.n_unresolvable)
         return d
 
 
@@ -93,20 +107,38 @@ class MechanismVerifier:
         self.fuzzy = fuzzy_threshold
 
     # ------------------------------------------------------------------ grounding
-    def ground(self, mention: str, preferred: tuple[str, ...]) -> int | None:
+    def ground_detail(self, mention: str, preferred: tuple[str, ...]) -> tuple[int | None, bool]:
+        """Resolve a mention. Returns (node index or None, ambiguous).
+
+        ``ambiguous`` means the name matches several nodes of an acceptable type and nothing
+        disambiguates them. Such an endpoint is reported in its own category: calling it
+        fabricated would be wrong, and picking one node silently could turn an invented edge
+        into a supported one.
+        """
         m = _KG_REF.search(mention)
         if m:
             i = int(m.group(1))
             if 0 <= i < self.kg.n:
                 # A kg id paired with a name that belongs to another node is a fabrication,
                 # not a lookup: models cite plausible ids for drugs they invented.
-                return i if self._name_agrees(i, mention) else None
+                return (i, False) if self._name_agrees(i, mention) else (None, False)
         clean = re.sub(r"\[.*?\]", "", mention).strip() or mention
         for t in preferred:
-            hit = self.kg.resolve(clean, t, self.fuzzy)
-            if hit is not None:
-                return hit
-        return None
+            hits = self.kg.lookup(clean, t, self.fuzzy, limit=10)
+            if not hits:
+                continue
+            if len(hits) == 1:
+                return hits[0], False
+            resolved = self.kg.resolve(clean, t, self.fuzzy)
+            # resolve() breaks a tie on an exact primary-name match; anything else stays open.
+            wanted = set(name_variants(clean))
+            if resolved is not None and norm(str(self.kg.names[resolved])) in wanted:
+                return resolved, False
+            return None, True
+        return None, False
+
+    def ground(self, mention: str, preferred: tuple[str, ...]) -> int | None:
+        return self.ground_detail(mention, preferred)[0]
 
     def _kg_forms(self, idx: int) -> set[str]:
         name = self.kg.names[idx]
@@ -165,11 +197,13 @@ class MechanismVerifier:
             return True
         return False
 
-    def check_edge(self, edge, u: int | None, v: int | None) -> EdgeCheck:
+    def check_edge(self, edge, u: int | None, v: int | None,
+                   ambiguous: bool = False) -> EdgeCheck:
         c = EdgeCheck(edge.source, edge.relation, edge.target, u, v, "unsupported")
         if u is None or v is None:
-            c.status = "ungrounded"
-            c.detail = "unknown entity: " + (edge.source if u is None else edge.target)
+            c.status = "ambiguous" if ambiguous else "ungrounded"
+            which = edge.source if u is None else edge.target
+            c.detail = ("name matches several nodes: " if ambiguous else "unknown entity: ") + which
             if edge.pmids and self.pubmed is not None:
                 arts = self.pubmed.fetch(edge.pmids)
                 for pmid in edge.pmids:
@@ -207,12 +241,13 @@ class MechanismVerifier:
         for k, e in enumerate(edges):
             src_types = (DRUG,) + MIDDLE_TYPES if k == 0 else MIDDLE_TYPES
             tgt_types = (DISEASE,) + MIDDLE_TYPES if k == len(edges) - 1 else MIDDLE_TYPES
-            u = self.ground(e.source, src_types)
-            v = self.ground(e.target, tgt_types)
+            u, u_amb = self.ground_detail(e.source, src_types)
+            v, v_amb = self.ground_detail(e.target, tgt_types)
             if k > 0 and nodes and nodes[-1] is not None and u is not None and nodes[-1] != u:
                 issues.append(f"broken chain at edge {k + 1}: {edges[k - 1].target} != {e.source}")
             nodes.extend([u, v] if k == 0 else [v])
-            checks.append(self.check_edge(e, u, v))
+            checks.append(self.check_edge(e, u, v, ambiguous=(u is None and u_amb)
+                                          or (v is None and v_amb)))
         first, last = nodes[0], nodes[-1]
         if first is None or drug_idx is None or first != drug_idx:
             issues.append("path does not start at the proposed drug")

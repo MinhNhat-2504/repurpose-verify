@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import random
+import re
 from pathlib import Path
 
 import numpy as np
@@ -12,10 +13,27 @@ from ..verify.schema import Proposal
 from .evaluate import load_run
 
 RATING_COLUMNS = ["plausibility_1to5", "mechanism_validity_1to5"]
+_KG_REF = re.compile(r"\[\s*kg:(\d+)\s*\]|kg:(\d+)", re.I)
+
+
+def name_refs(text: str, kg) -> str:
+    """Replace bare ``kg:123`` references with node names so a rater can read the item.
+
+    Agents routinely answer entirely in graph ids - a reviewer cannot rate "kg:16492".
+    """
+    if kg is None or not text:
+        return text
+
+    def sub(m: re.Match) -> str:
+        i = int(m.group(1) or m.group(2))
+        return str(kg.names[i]) if 0 <= i < kg.n else m.group(0)
+
+    out = _KG_REF.sub(sub, text).strip()
+    return re.sub(r"\s{2,}", " ", out)
 
 
 def export_review(run_dirs: list[Path], out_dir: Path, n_items: int = 50, top_per_disease: int = 3,
-                  seed: int = 13) -> tuple[Path, Path]:
+                  seed: int = 13, kg=None) -> tuple[Path, Path]:
     """Sample proposals evenly across systems, strip system identity, shuffle."""
     rng = random.Random(seed)
     pools: dict[str, list[dict]] = {}
@@ -25,9 +43,13 @@ def export_review(run_dirs: list[Path], out_dir: Path, n_items: int = 50, top_pe
         for rec in recs.values():
             for rank, p in enumerate(rec.get("proposals", [])[:top_per_disease], 1):
                 prop = Proposal.from_any(p)
-                items.append({"system": name, "disease": rec["disease_name"], "drug": prop.drug,
-                              "rank": rank, "mechanism": prop.path_text(),
-                              "rationale": prop.rationale})
+                drug = name_refs(prop.drug, kg)
+                idx = (p.get("verification") or {}).get("drug_idx")
+                if kg is not None and idx is not None and not drug:
+                    drug = str(kg.names[int(idx)])
+                items.append({"system": name, "disease": rec["disease_name"], "drug": drug,
+                              "rank": rank, "mechanism": name_refs(prop.path_text(), kg),
+                              "rationale": name_refs(prop.rationale, kg)})
         rng.shuffle(items)
         pools[name] = items
     per_system = max(1, n_items // max(1, len(pools)))

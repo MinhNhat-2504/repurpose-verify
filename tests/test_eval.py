@@ -64,10 +64,10 @@ def test_evaluate_and_report(tmp_path):
     assert "Hit@5" in report and "Paired bootstrap" in report
 
 
-def test_review_roundtrip(tmp_path):
+def test_review_roundtrip(tmp_path, kg):
     _write_run(tmp_path / "a", "a", {9: [0]})
     _write_run(tmp_path / "b", "b", {9: [1]})
-    sheet, key = export_review([tmp_path / "a", tmp_path / "b"], tmp_path / "rv", n_items=2)
+    sheet, key = export_review([tmp_path / "a", tmp_path / "b"], tmp_path / "rv", n_items=2, kg=kg)
     df = pd.read_csv(sheet, encoding="utf-8-sig")
     assert len(df) == 2 and "system" not in df.columns
     for name, vals in (("ra.csv", [4, 2]), ("rb.csv", [5, 2])):
@@ -77,6 +77,10 @@ def test_review_roundtrip(tmp_path):
         d.to_csv(tmp_path / name, index=False, encoding="utf-8-sig")
     out = score_review(tmp_path / "ra.csv", tmp_path / "rb.csv", key)
     assert set(out["by_system"]) == {"a", "b"}
+    from repurpose_verify.eval.review import name_refs
+
+    assert name_refs("kg:0 inhibits [kg:4]", kg) == "Metformin inhibits PTGS2"
+    assert name_refs("kg:99999 stays", kg) == "kg:99999 stays"
     assert weighted_kappa(np.array([1, 2, 3]), np.array([1, 2, 3]), [1, 2, 3, 4, 5]) == pytest.approx(1.0)
 
 

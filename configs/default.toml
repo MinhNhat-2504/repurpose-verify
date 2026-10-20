@@ -26,6 +26,16 @@ processed_dir = "data/processed/kg"
 # MONDO ontology: synonyms + MeSH cross-references used for entity grounding.
 mondo_url = "http://purl.obolibrary.org/obo/mondo.obo"
 mondo_file = "data/raw/mondo/mondo.obo"
+# HGNC gene symbol aliases, joined to gene nodes by NCBI gene id. Without them an agent that
+# writes "COX-2" instead of PTGS2 is scored as having invented an entity.
+hgnc_url = "https://storage.googleapis.com/public-download-files/hgnc/tsv/tsv/hgnc_complete_set.txt"
+hgnc_file = "data/raw/hgnc/hgnc_complete_set.txt"
+# Also index HGNC's long alias/previous *names*, not just symbols. Off by default: they are
+# descriptive phrases that collide with other node types.
+hgnc_alias_names = false
+# Explicit mention -> node pins for aliases where curated sources disagree with pharmacology
+# usage (see the file's own notes). Applied ahead of every name and alias lookup.
+alias_overrides = "data/manual/gene_aliases.csv"
 
 [groundtruth]
 out_dir = "data/processed/groundtruth"
@@ -40,6 +50,11 @@ fuzzy_threshold = 95
 # Number of evaluation diseases to sample (0 = all diseases that have at least one positive).
 n_eval_diseases = 200
 min_positives_per_disease = 1
+# Evaluation diseases must have at least this many associated genes in the KG. PrimeKG leaves
+# 39% of the diseases carrying a positive with no disease_protein edge at all; on those, no
+# mechanism path can end at the disease, so every system's proposals would be unverifiable for
+# a reason unrelated to the model. Set to 0 to keep them and report the strata separately.
+min_disease_genes = 1
 seed = 13
 
 [pubmed]
@@ -65,7 +80,11 @@ max_steps = 16
 unverified_policy = "demote"
 # Give rejected proposals back to the agent once so it can repair or replace them.
 revise_rounds = 1
-workers = 4
+# One worker by default. A single local server (Ollama, one vLLM replica) serialises requests
+# anyway, and firing four concurrent turns at Ollama was observed to leave sockets established
+# with no response ever arriving - the run then sat in the client timeout. Raise this only
+# against a server you know serves requests in parallel.
+workers = 1
 
 [eval]
 ks = [1, 5, 10, 20]
@@ -91,7 +110,11 @@ price_out_per_mtok = 0.0
 
 [models.qwen25-7b]
 backend = "openai_compat"
-model = "qwen2.5:7b"
+# Ollama caps the context at its own default (4k) regardless of what the model supports, and
+# silently truncates longer prompts, so run against a derived model that raises it:
+#   printf 'FROM qwen2.5:7b\nPARAMETER num_ctx 16384\n' > Modelfile
+#   ollama create qwen2.5-7b-ctx16k -f Modelfile
+model = "qwen2.5-7b-ctx16k"
 base_url = "http://localhost:11434/v1"
 api_key_env = "LOCAL_LLM_API_KEY"
 tool_mode = "native"

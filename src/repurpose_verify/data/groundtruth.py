@@ -219,7 +219,8 @@ def build_groundtruth(kg: KnowledgeGraph, pre_trials: Iterable[Trial], post_tria
                       cutoff: date, eval_end: date, *, single_drug: bool = True,
                       post_phases: Iterable[str] = ("PHASE2", "PHASE3", "PHASE4"),
                       manual_path: Path | None = None, fuzzy: float = 0, n_eval: int = 0,
-                      min_pos: int = 1, seed: int = 13) -> tuple[GroundTruth, dict]:
+                      min_pos: int = 1, min_disease_genes: int = 0,
+                      seed: int = 13) -> tuple[GroundTruth, dict]:
     mapper = TrialMapper(kg, fuzzy)
     min_phase = min(PHASE_RANK[p] for p in post_phases)
 
@@ -252,6 +253,14 @@ def build_groundtruth(kg: KnowledgeGraph, pre_trials: Iterable[Trial], post_tria
                                             "tier", "first_date", "max_phase", "n_trials", "refs",
                                             "sources"])
     positives = positives.sort_values(["disease_idx", "first_date"]).reset_index(drop=True)
+    # A positive is "mechanism-reachable" when the graph admits at least one drug -> gene ...
+    # -> disease path for it. Positives that are not reachable bound what any verified system
+    # can score, so the ceiling is reported next to the results.
+    positives["n_targets"] = [len(kg.neighbors(int(d), ["drug_protein"]))
+                              for d in positives.drug_idx]
+    positives["mechanism_reachable"] = [
+        bool(kg.mechanism_paths(int(d), int(s), limit=1))
+        for d, s in zip(positives.drug_idx, positives.disease_idx)]
 
     known_rows = [{"drug_idx": d, "disease_idx": s, "source": "kg"} for d, s in kg_known]
     known_rows += [{"drug_idx": d, "disease_idx": s, "source": "pre_cutoff_trial"}
@@ -263,9 +272,15 @@ def build_groundtruth(kg: KnowledgeGraph, pre_trials: Iterable[Trial], post_tria
     ev_df = pd.DataFrame({"disease_idx": eligible.index.astype(int),
                           "disease_name": [kg.names[i] for i in eligible.index],
                           "n_positives": eligible.values})
+    ev_df["n_genes"] = [len(kg.neighbors(int(i), ["disease_protein"])) for i in ev_df.disease_idx]
+    n_eligible = len(ev_df)
+    if min_disease_genes > 0:
+        ev_df = ev_df[ev_df.n_genes >= min_disease_genes]
+    n_with_genes = len(ev_df)
     if n_eval and len(ev_df) > n_eval:
         ev_df = ev_df.sample(n=n_eval, random_state=np.random.RandomState(seed))
     ev_df = ev_df.sort_values("disease_idx").reset_index(drop=True)
+    in_eval = positives.disease_idx.isin(set(ev_df.disease_idx))
 
     overlap = sum(1 for k in zip(positives.drug_idx, positives.disease_idx) if k in kg_known)
     report = {
@@ -274,8 +289,20 @@ def build_groundtruth(kg: KnowledgeGraph, pre_trials: Iterable[Trial], post_tria
         "n_pre_cutoff_trial_pairs": len(pre_pairs), "n_kg_known_pairs": len(kg_known),
         "n_post_cutoff_pairs": len(post_pairs), "n_positives_novel": len(positives),
         "positives_by_tier": positives["tier"].value_counts().to_dict(),
-        "n_diseases_with_positive": int(len(counts)), "n_eval_diseases": int(len(ev_df)),
+        "n_diseases_with_positive": int(len(counts)),
+        "min_disease_genes": min_disease_genes,
+        "n_diseases_eligible": n_eligible,
+        "n_diseases_dropped_no_genes": n_eligible - n_with_genes,
+        "n_diseases_after_gene_filter": n_with_genes,
+        "n_eval_diseases": int(len(ev_df)),
         "unmapped_manual_approvals": unmapped_manual,
         "leakage_check_positives_in_kg": overlap,
+        "ceiling": {
+            "positives_in_eval": int(in_eval.sum()),
+            "drug_has_no_target": int((positives.n_targets[in_eval] == 0).sum()),
+            "mechanism_reachable": int(positives.mechanism_reachable[in_eval].sum()),
+            "mechanism_reachable_rate": round(float(positives.mechanism_reachable[in_eval].mean()), 4)
+            if in_eval.any() else None,
+        },
     }
     return GroundTruth(positives, known, ev_df), report

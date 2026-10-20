@@ -20,6 +20,48 @@ This repository implements the benchmark, the agent and the baselines for the st
                                 unsupported / ungrounded)                 cost per correct hit
 ```
 
+## What the benchmark looks like (measured, cutoff 2021-12-31)
+
+| | |
+|---|---|
+| PrimeKG snapshot | 129,375 nodes · 4,050,249 undirected edges · 7,957 drugs · 17,080 diseases |
+| Trials read | 172,939 started on/before the cutoff · 34,595 phase 2+ started after it |
+| Pairs known at the cutoff | 11,831 from KG indications/off-label use + 68,631 from earlier trials |
+| Post-cutoff pairs found | 6,556 → **2,776 novel** (phase 2: 1,602 · phase 3: 626 · phase 4: 548) |
+| Diseases carrying a novel positive | 1,149 → 725 after requiring ≥1 associated gene → **200 sampled** (565 positives) |
+| Leakage check | 0 positives have a drug–disease edge in the KG |
+| Entity mapping coverage | a drug mapped in 65% of trials, a disease in 77% (`report.json`; audit a sample with `audit-mapping`) |
+
+**The verifiable ceiling.** Only **59.3%** of the 565 evaluation positives are *mechanism-reachable*: for the rest the graph admits no drug → gene … → disease path within four edges, usually because the drug has no recorded target (79 positives) or the disease has few associated genes. A system that only reports verified proposals therefore cannot exceed ~0.59 recall, and that number belongs next to the results rather than in a footnote. `positives.csv` carries `mechanism_reachable` and `n_targets` per pair so the ceiling can be recomputed per stratum.
+
+Requiring ≥1 associated gene per evaluation disease (`min_disease_genes`) drops 424 of 1,149 diseases. Without it, 39% of the evaluation set would be diseases on which *no* system could ever produce a verifiable path — an artefact of PrimeKG's coverage, not a property of any model. Set it to 0 to keep them and report the strata separately.
+
+### Baselines on this split
+
+| System | MRR | Hit@5 | Hit@10 | Hit@20 |
+|---|---|---|---|---|
+| popularity | 0.029 [0.014, 0.046] | 0.055 | 0.075 | 0.085 |
+| network proximity | 0.012 [0.005, 0.020] | 0.020 | 0.035 | 0.055 |
+| ComplEx (5 epochs, dim 128) | 0.007 [0.004, 0.010] | 0.000 | 0.020 | 0.045 |
+
+Ranking ~8,000 drugs for an average of 2.8 unseen positives per disease is hard, and these numbers say so. A benchmark where the trivial baseline already scores well would not be measuring anything.
+
+### What the verifier finds (12-disease pilot, qwen2.5-7b, 16k context)
+
+| System | Proposals | Verified | **Fabricated** | Unresolvable | Unverified |
+|---|---|---|---|---|---|
+| closed book (no retrieval) | 213 | 0.000 | **0.144** | 0.670 | 0.814 |
+| RAG + verify-revise | 136 | 0.926 | **0.031** | 0.000 | 0.031 |
+
+Reading the two columns apart is the point:
+
+* **Fabricated** edges are the model's own claims about real entities that nothing supports. The closed-book model asserts `COX-2 → ataxia telangiectasia` nine times, `serotonin → Sandhoff disease`, and — in the same run — both `Metformin activates AMPK` and `Metformin inhibits AMPK`.
+* **Unresolvable** edges are the larger failure and a different one: two thirds of closed-book mechanism endpoints are prose, not entities — "inflammation", "oxidative stress", "excitotoxicity", "bone growth and development". The claims may be true; they cannot be checked against any structured source, which is what a reviewer is entitled to ask for.
+
+An earlier version of this table reported 0.953 "fabricated" for closed book. That number was wrong, and the way it was wrong is worth recording: "COX-2" is not an invented entity, it is PTGS2 under the name every pharmacologist uses. Grounding now loads HGNC alias symbols (44,495 genes, joined on NCBI gene id — never by name, because a substring search for "COX-2" returns COX2, a mitochondrial subunit of a different protein) and a small curated pin file for the few aliases where HGNC itself disagrees with drug-mechanism usage (`data/manual/gene_aliases.csv`; HGNC lists COX-2 as an alias of *PTGER2*). Mentions that still match several nodes are reported as *ambiguous* rather than silently resolved, because a wrong grounding could turn an invented edge into a supported one.
+
+A caveat on the high verified rate: with `find_mechanism_paths` available, the agent largely submits paths the tool handed it, so verification is close to automatic. The informative contrast is against the systems that lack the tool, which is what the ablations are for — not the absolute rate.
+
 ## Systems and ablations
 
 | System | What it is | Command |
@@ -39,7 +81,8 @@ All systems are verified afterwards, whatever their mode, so fabricated-edge rat
 ## Metrics
 
 * **Ranking** (filtered: drugs known at the cutoff are removed before scoring): Hit@K, Recall@K, MRR. 95% CIs come from a disease-level bootstrap (1,000 resamples), and pairs of systems are compared with a paired bootstrap.
-* **Faithfulness**: verified-proposal rate; fabricated-edge rate, split into unsupported / ungrounded / circular; invalid-citation rate (the PMID does not exist or was published after the cutoff); malformed-path rate. A `kg:` id quoted next to another node's name counts as a fabricated entity, not as a lookup — models do cite plausible ids for drugs they invented, and that was caught in a live run during development.
+* **Faithfulness**: verified-proposal rate; **fabricated**-edge rate (unsupported + circular: real entities, no admissible evidence) kept apart from **unresolvable** (ungrounded + ambiguous: not checkable in the graph's vocabulary); invalid-citation rate (the PMID does not exist or was published after the cutoff); malformed-path rate. A `kg:` id quoted next to another node's name counts as a fabricated entity, not as a lookup — models do cite plausible ids for drugs they invented, and that was caught in a live run during development.
+* Saved runs can be re-scored with an improved verifier without paying for the LLM again: `reverify runs/<name> --in-place`.
 * **Cost**: input/output tokens, USD, tokens and USD per correct hit.
 * **Blinded expert review**: an anonymised sheet of top proposals for two pharmacists, scored with quadratic-weighted Cohen's κ (`review export|score`).
 * **Tier sensitivity**: `--min-tier phase3` or `approved`.
@@ -60,7 +103,7 @@ These controls reduce leakage but do not remove it. Discuss the remaining limits
 
 ```bash
 pip install -e ".[all]"                 # or: export PYTHONPATH=src
-python -m repurpose_verify download all # PrimeKG nodes.tab + edges.csv (395 MB) + MONDO
+python -m repurpose_verify download all # PrimeKG nodes.tab + edges.csv (395 MB) + MONDO + HGNC
                                         # add --kg-csv to use the 982 MB monolithic kg.csv instead
 python -m repurpose_verify build-kg
 python -m repurpose_verify build-gt     # ClinicalTrials.gov API v2, cached under data/cache
@@ -82,6 +125,12 @@ Run the tests with `pytest`. They use a synthetic 11-node graph and a mock LLM, 
 Model profiles live in `configs/default.toml` (`[models.<name>]`). Override them with `--config my.toml`.
 
 * `backend = "openai_compat"`: vLLM, Ollama (`base_url = "http://localhost:11434/v1"`), llama.cpp or TGI. Set `tool_mode = "react"` for models without native function calling. The agent then uses a `<tool_call>{json}</tool_call>` text protocol.
+* **Ollama truncates prompts silently.** It serves its own context default (4k) no matter what the model supports, so an agent turn carrying tool results is cut without an error and the run looks like a model failure. Raise it per model before measuring anything:
+  ```bash
+  printf 'FROM qwen2.5:7b\nPARAMETER num_ctx 16384\n' > Modelfile
+  ollama create qwen2.5-7b-ctx16k -f Modelfile
+  ```
+  Ollama also serialises requests unless `OLLAMA_NUM_PARALLEL` is set, so `--workers` above 1 buys little against a single instance — and four concurrent turns were observed to end with four established sockets and no response ever arriving, leaving the run parked in the client timeout. `workers` therefore defaults to 1, and the client timeout to 240 s with retries, so a stalled server costs one request rather than the run.
 * `backend = "anthropic"`: Claude through the official SDK (`pip install anthropic`, `ANTHROPIC_API_KEY`). Its knowledge cutoff is later than the benchmark cutoff, so report it as a leakage-prone upper bound together with its probe results. Server-side refusal fallbacks are **not** enabled: they would silently swap in a different model in the middle of a run.
 * Set `price_in_per_mtok` / `price_out_per_mtok` in each profile to get cost per correct hit.
 
@@ -100,6 +149,7 @@ For TxGNN, train with `split='full_graph'` on the same PrimeKG, then export the 
 | Path | Content |
 |---|---|
 | `data/processed/kg/` | `nodes.csv.gz`, `edges.npz`, `vocab.json` |
+| `data/manual/gene_aliases.csv` | curated mention → node pins, with the reason for each |
 | `data/processed/groundtruth/positives.csv` | novel post-cutoff pairs: tier, first start date, NCT ids |
 | `data/processed/groundtruth/known_pairs.csv.gz` | pairs known at the cutoff (KG uses + pre-cutoff trials) |
 | `data/processed/groundtruth/eval_diseases.csv` | the sampled evaluation diseases |
@@ -112,7 +162,9 @@ For TxGNN, train with `split='full_graph'` on the same PrimeKG, then export the 
 
 * PrimeKG's sources have different release dates around 2021, so the snapshot is "about 2021", not exactly the cutoff date.
 * A trial start is evidence of clinical interest, not of efficacy. Report tier-stratified results (`--min-tier phase3`, `approved`).
-* Entity mapping from CT.gov (MeSH ids → MONDO xrefs, then drug names) is imperfect. Coverage is reported in `report.json`, and a manual audit of a random sample is recommended.
+* Entity mapping from CT.gov (MeSH ids → MONDO xrefs, then drug names) is imperfect: a drug resolves in 65% of trials and a disease in 77%. Coverage is in `report.json`; audit a random sample with `audit-mapping`.
+* Grounding is only as complete as the vocabulary. PrimeKG + MONDO + HGNC still miss informal receptor names ("AT1 receptor") and hold no node for many processes an author would name in prose, which is why *unresolvable* is its own category instead of being folded into fabrication.
+* Only 59.3% of the evaluation positives are mechanism-reachable, so a verified-only system is capped well below 1.0 recall by the graph, not by the model.
 * Literature evidence uses co-mention, which is necessary but not sufficient. Report results with `accept_literature = false` (KG-only verification) as a stricter variant.
 * The leakage probe measures what the model *says* it knows. A model can still be helped by knowledge it does not verbalise.
 
