@@ -22,10 +22,24 @@ fix the draft if the runs are newer, re-read the artefact if the draft is.
 
 ## Outstanding before submission
 
-1. **Blinded expert review** (`[PENDING-REVIEW]`): the sheet is already generated at
-   `runs/review/review_sheet.csv` (60 anonymised, shuffled proposals with graph ids rendered as
-   names). Two pharmacists rate it independently, then `review score --sheet-a … --sheet-b …
-   --key runs/review/review_key.csv`.
+1. **Expert review is no longer on the critical path.** Section 6.4 replaces the two-rater panel
+   with three checks that need no pharmacological judgement:
+   * `validate moa` — ChEMBL mechanism-of-action confirmation of the drug→target edges, with
+     drugs mapped through UniChem by structure. This answers the objection a panel would not:
+     that the verifier accepts edges from the same graph the agent reads.
+   * `reverify --config strict.toml` with `verifier.require_target_first_edge = true` — how much
+     of the verified rate survives requiring a curated target rather than a metabolising enzyme.
+     Costs no inference.
+   * `validate literature` — post-cutoff PubMed co-mention of the top proposals against a
+     random-drug control.
+
+   The blinded sheet still exists at `runs/review/review_sheet.csv` (60 anonymised, shuffled
+   proposals) if a rater becomes available. A **20-item spot check by the pharmacologist
+   co-author** is worth having for face validity — ten minutes, one rater, reported as a spot
+   check with no κ — but it is not a primary outcome. A non-expert can instead fill
+   `data/processed/groundtruth/mapping_audit.csv` (from `audit-mapping`), which asks only whether
+   a trial's drug and condition were matched to the right entities; that covers the mapping
+   precision limitation, which is what reviewers press on.
 2. **Curated approvals.** `data/manual/approvals_after_cutoff.csv` is empty; FDA/EMA
    new-indication approvals after the cutoff would add the `approved` tier, the strongest
    positive label.

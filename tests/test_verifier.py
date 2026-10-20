@@ -33,6 +33,24 @@ def test_unsupported_and_ungrounded(kg):
     assert [e.status for e in res.edges] == ["ungrounded", "ungrounded"]
 
 
+def test_require_target_first_edge(kg):
+    """A path through a metabolising enzyme is pharmacokinetics, not a mechanism of action."""
+    # Relabel Metformin -> PRKAA1 as an enzyme relation rather than a target.
+    code = kg.rel_code["drug_protein"]
+    enzyme = kg.display_relations.index("target")
+    kg.display_relations[enzyme] = "enzyme"
+    p = prop("metformin", ("kg:0", "metabolised by", "kg:3"),
+             ("kg:3", "ppi", "kg:6"), ("kg:6", "associated with", "kg:9"))
+    assert MechanismVerifier(kg, CUTOFF).verify(p, 9).verified          # default accepts it
+    strict = MechanismVerifier(kg, CUTOFF, require_target_first_edge=True).verify(p, 9)
+    assert not strict.verified
+    assert "first edge is not a drug target (enzyme)" in strict.issues
+    assert strict.n_fabricated == 0            # a role objection, not a fabricated claim
+    kg.display_relations[enzyme] = "target"
+    assert MechanismVerifier(kg, CUTOFF, require_target_first_edge=True).verify(p, 9).verified
+    assert code == kg.rel_code["drug_protein"]
+
+
 def test_unresolvable_is_not_fabrication(kg):
     """Prose endpoints ("inflammation") are unresolvable, not fabricated claims."""
     v = MechanismVerifier(kg, CUTOFF)

@@ -94,7 +94,7 @@ class MechanismVerifier:
     def __init__(self, kg: KnowledgeGraph, cutoff: date, pubmed=None, opentargets=None,
                  accept_literature: bool = True, use_opentargets: bool = False,
                  opentargets_min_score: float = 0.1, min_edges: int = 2, max_edges: int = 4,
-                 fuzzy_threshold: float = 0):
+                 fuzzy_threshold: float = 0, require_target_first_edge: bool = False):
         self.kg = kg
         self.cutoff = cutoff
         self.pubmed = pubmed
@@ -105,6 +105,11 @@ class MechanismVerifier:
         self.min_edges = min_edges
         self.max_edges = max_edges
         self.fuzzy = fuzzy_threshold
+        # PrimeKG labels a drug-protein edge target, enzyme, transporter or carrier. Only the
+        # first can be a mechanism of action: a path through a drug's metabolising enzyme is
+        # pharmacokinetics. Off by default so that the default verifier stays comparable with
+        # the released runs; on, it is the stricter reading of "mechanism".
+        self.require_target_first_edge = require_target_first_edge
 
     # ------------------------------------------------------------------ grounding
     def ground_detail(self, mention: str, preferred: tuple[str, ...]) -> tuple[int | None, bool]:
@@ -259,6 +264,11 @@ class MechanismVerifier:
         middle = [n for n in nodes[1:-1] if n is not None]
         if not any(self.kg.types[n] == GENE for n in middle):
             issues.append("no gene/protein on the path")
+        if self.require_target_first_edge and first is not None and nodes[1] is not None:
+            roles = {disp for rel, disp in self.kg.edge_relations(first, nodes[1])
+                     if rel == "drug_protein"}
+            if roles and "target" not in roles:
+                issues.append("first edge is not a drug target (" + ", ".join(sorted(roles)) + ")")
         structure_ok = not issues
         verified = structure_ok and all(c.status in SUPPORTED for c in checks)
         return Verification(drug_idx, disease_idx, structure_ok, issues, checks, verified)

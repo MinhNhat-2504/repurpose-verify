@@ -339,11 +339,38 @@ identifiers that do not resolve or that postdate the cutoff.
 Input and output tokens, monetary cost where a price is configured, and tokens or cost per
 correct hit — the quantity that makes agentic and non-agentic systems comparable.
 
-### 6.4 Blinded expert review `[PENDING-REVIEW]`
+### 6.4 Validation that does not depend on expert raters
 
-Top proposals from every system are exported anonymised and shuffled, with graph identifiers
-rendered as entity names, for two pharmacists to rate plausibility and mechanism validity on
-five-point scales. Agreement is quantified with quadratic-weighted Cohen's κ. `[PENDING-REVIEW]`
+A blinded panel of pharmacists rating plausibility is the conventional check here, and it has two
+problems for this paper. It is the method we argue against relying on — a human judgement that
+another group cannot reproduce — and it does not address the objection a reviewer will actually
+raise, which is that our verifier accepts an edge from the same graph the agent reads. We
+therefore use three checks that are either automated or require no pharmacological judgement.
+
+**(a) Independent confirmation of drug–target claims.** The first edge of every path is a claim
+about a drug's protein target, accepted by the verifier because PrimeKG contains it. We re-check
+those edges against ChEMBL's mechanism-of-action curation, a pipeline the agent never queried.
+Drugs are mapped DrugBank → ChEMBL through UniChem by chemical structure (InChI), never by name,
+for the reason given in Section 4.2. ChEMBL records no mechanism for many drugs; that is reported
+as coverage, not counted as disagreement. The two resources are not fully independent — both
+curate from labels and literature — so this is corroboration, not arbitration.
+
+**(b) Role sensitivity of "mechanism".** PrimeKG merges four distinct relations into
+`drug_protein`: target, enzyme, transporter and carrier. Only the first can be a mechanism of
+action; a path through a drug's metabolising enzyme describes pharmacokinetics. We therefore
+re-score every run under a stricter verifier that requires the drug→protein hop to be a curated
+target, and report the change. This costs no model inference: the verifier re-reads stored
+proposals.
+
+**(c) Post-cutoff literature corroboration.** For each system's top-5 proposals we count PubMed
+records published *after* the cutoff that co-mention the drug and the disease — an outcome signal
+independent of ClinicalTrials.gov. Co-mention is weak evidence, and a system that names famous
+drugs scores well on it, so each system is compared with a control of random drugs drawn for the
+same diseases, as in the leakage probe.
+
+A 20-item spot check by a pharmacologist co-author remains useful for face validity and is a
+ten-minute task; we do not report inter-rater agreement on it and do not treat it as a primary
+outcome. `[PENDING-REVIEW]`
 
 ## 7 Results
 
@@ -517,6 +544,28 @@ On one RTX 4060 (8 GB) with a 7B model served locally, a disease takes 96.6 s un
 total with no failed requests. Single-worker execution is not a limitation of the hardware but of
 the server: four concurrent turns against one instance stalled, and one worker was also faster
 per disease.
+
+### 7.6 How much does a "verified mechanism" mean?
+
+**Role sensitivity.** Requiring the drug→protein hop to be a curated *target*, rather than any
+of PrimeKG's four `drug_protein` roles, drops the verified-proposal rate from 0.958 to 0.843 for
+the verified agent and from 0.895 to 0.786 without verification: about one in nine accepted
+mechanisms runs through a metabolising enzyme, transporter or carrier instead of a target. The
+malformed-path rate rises correspondingly (0.017 → 0.132 and 0.043 → 0.152), while fabricated-edge
+rates and all ranking metrics are unchanged — a role objection is not a false claim, and it does
+not alter which drugs were proposed.
+
+This is a limitation of our own verifier, and of mechanism verification over this graph in
+general: `find_mechanism_paths` enumerates over every `drug_protein` edge, so an agent can be
+handed, and then credited with, a path that is pharmacokinetics. We report both readings and
+provide the stricter one as a configuration flag (`verifier.require_target_first_edge`) rather
+than silently adopting either.
+
+**Independent confirmation.** `[RESULT-PENDING: ChEMBL mechanism-of-action confirmation rates,
+broken out by KG edge role, from runs/report_external/moa.md]`
+
+**Post-cutoff literature.** `[RESULT-PENDING: co-mention rates against the random-drug control,
+from runs/report_external/]`
 
 ## 8 Discussion
 

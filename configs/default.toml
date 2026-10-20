@@ -72,6 +72,11 @@ use_opentargets = false
 opentargets_min_score = 0.1
 max_path_edges = 4
 min_path_edges = 2
+# Require the drug -> protein hop to be a curated drug *target*, not a metabolising enzyme,
+# transporter or carrier. PrimeKG merges all four into drug_protein, so the default verifier
+# accepts paths that are pharmacokinetics rather than mechanism. Off by default to keep the
+# released runs comparable; the stricter reading is reported as a sensitivity analysis.
+require_target_first_edge = false
 
 [agent]
 top_k = 20

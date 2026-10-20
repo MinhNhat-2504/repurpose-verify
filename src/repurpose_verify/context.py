@@ -99,4 +99,5 @@ class Context:
             use_opentargets=v.get("use_opentargets", False),
             opentargets_min_score=v.get("opentargets_min_score", 0.1),
             min_edges=v.get("min_path_edges", 2), max_edges=v.get("max_path_edges", 4),
-            fuzzy_threshold=self.cfg["groundtruth"].get("fuzzy_threshold", 0))
+            fuzzy_threshold=self.cfg["groundtruth"].get("fuzzy_threshold", 0),
+            require_target_first_edge=v.get("require_target_first_edge", False))

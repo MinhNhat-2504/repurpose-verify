@@ -264,6 +264,44 @@ def cmd_evaluate(ctx: Context, args) -> None:
     print(out.read_text(encoding="utf-8"))
 
 
+def cmd_validate(ctx: Context, args) -> None:
+    """Independent validation that needs no expert rater (ChEMBL MoA, post-cutoff literature)."""
+    from .eval.evaluate import load_run
+    from .eval.external_validation import (ChemblMoA, PostCutoffLiterature, validate_literature,
+                                           validate_moa, write_external_report)
+
+    cfg = ctx.cfg
+    results: dict[str, dict] = {}
+    moa = ChemblMoA(ctx.http("chembl", 0.15)) if args.what in ("moa", "all") else None
+    lit = None
+    if args.what in ("literature", "all"):
+        pm = cfg["pubmed"]
+        lit = PostCutoffLiterature(ctx.http("pubmed_post"), cfg.cutoff,
+                                   pm.get("api_key_env", "NCBI_API_KEY"), pm.get("email", ""))
+    known = ctx.gt.known_by_disease()
+    for run_dir in (Path(r) for r in args.runs):
+        name, _, recs = load_run(run_dir)
+        records = list(recs.values())
+        if args.limit:
+            records = records[:args.limit]
+        entry: dict = {}
+        if moa is not None:
+            log.info("%s: checking drug-target claims against ChEMBL", name)
+            entry["moa"] = validate_moa(ctx.kg, records, moa,
+                                        verified_only=not args.all_proposals,
+                                        max_edges=args.max_edges).rates()
+        if lit is not None:
+            log.info("%s: checking post-cutoff literature co-mention", name)
+            entry["literature"] = validate_literature(ctx.kg, records, lit, top_k=args.top_k,
+                                                      controls_per_disease=args.controls,
+                                                      known_by_disease=known)
+        results[name] = entry
+    out = Path(args.out) if args.out else cfg.runs_dir / "report_external" / "report.md"
+    path = write_external_report(results, out, cfg.cutoff)
+    print(json.dumps(results, indent=2, default=str))
+    print(f"Report: {path}")
+
+
 def cmd_review(ctx: Context, args) -> None:
     from .eval.review import export_review, score_review
 
@@ -378,6 +416,18 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--limit", type=int,
                    help="score only the first N evaluation diseases (matches agent --limit)")
     s.set_defaults(fn=cmd_evaluate)
+
+    s = sub.add_parser("validate", help="independent validation without an expert rater")
+    s.add_argument("what", choices=["moa", "literature", "all"], nargs="?", default="all")
+    s.add_argument("--runs", nargs="+", required=True)
+    s.add_argument("--top-k", type=int, default=5, help="proposals per disease for co-mention")
+    s.add_argument("--controls", type=int, default=5, help="random control drugs per disease")
+    s.add_argument("--limit", type=int, help="first N diseases only")
+    s.add_argument("--max-edges", type=int, default=0, help="cap drug-target edges checked")
+    s.add_argument("--all-proposals", action="store_true",
+                   help="check unverified proposals too, not only verified ones")
+    s.add_argument("--out")
+    s.set_defaults(fn=cmd_validate)
 
     s = sub.add_parser("review", help="blinded pharmacist review")
     s.add_argument("action", choices=["export", "score"])
