@@ -6,14 +6,21 @@ Corresponding author: [e-mail]
 
 ---
 
-> **Draft status (2026-10-20).** Every number in this draft is measured and reproducible from
-> the released code; nothing is projected. Two things are *not* final:
-> 1. **The LLM experiments are a 12-disease pilot** (Section 7.3). The full 200-disease runs
->    are queued; Tables 4 and 5 will be regenerated, and the §7.3 text that depends on pilot
->    scale is marked `[PILOT]`.
-> 2. **Blinded expert review has not been run** (Section 6.4). Placeholders are marked
->    `[PENDING-REVIEW]`.
-> Sections 3–6, 7.1, 7.2, 7.4 and 7.5 are complete at full scale.
+> **Draft status (2026-10-21).** Every number in this draft is measured at full scale — 200
+> evaluation diseases, three LLM systems, three knowledge-graph baselines — and reproducible
+> from the released code. `paper/check_numbers.py` re-derives each one from the stored
+> artefacts and fails if the text disagrees.
+>
+> One item is outstanding: **blinded expert review has not been run** (Section 6.4), marked
+> `[PENDING-REVIEW]`.
+>
+> An earlier version of this draft reported a 12-disease pilot in which verification cut
+> fabricated edges 7-fold. At full scale the reduction is 2.6-fold (Section 7.3). The pilot
+> overestimated the effect by roughly three times, and a claim about citation behaviour drawn
+> from it did not survive either. Both corrections are recorded in Section 7.3 rather than
+> quietly replaced, because the discrepancy is itself a result about pilot-scale faithfulness
+> estimates.
+>
 > Every reference must be checked against the record before submission; those taken from
 > secondary summaries rather than read in full are marked `[verify]`.
 
@@ -36,16 +43,29 @@ fall in a 200-disease evaluation set, and none has a drug–disease edge in the 
 proposal must carry a mechanism path, and a verifier checks every edge against graph relations
 or a cited pre-cutoff abstract. We report *fabricated* edges (both endpoints real, nothing links
 them) apart from *unresolvable* ones (the endpoint names no single entity), because merging them
-overstates fabrication by a factor of three. In a 12-disease pilot with an open-weight 7B model,
-verification with one revision round reduces fabricated edges from 0.228 to 0.031, and the
-unverified agent attached 20 PubMed identifiers without ever querying PubMed — all 20 were
-sequential placeholders and all 20 failed the check. A weight-level leakage probe with positive
-and negative controls finds no post-cutoff signal above its own false-positive floor.
+overstates fabrication threefold.
 
-**Conclusions.** Giving an agent retrieval tools does not make it faithful; checking its claims
-does. We also quantify a limit of mechanism-verified evaluation itself: only 59.3% of our
-positives admit any mechanism path in the graph, which caps what a verified-only system can
-recover regardless of the model.
+Across 200 diseases and 8,586 proposals from an open-weight 7B model, grounding and verification
+act strongly on faithfulness and not at all on accuracy. A closed-book agent fabricates 21.1% of
+its mechanism edges and leaves 69.5% unresolvable, with 0.3% of its proposals verified. Adding
+graph tools takes fabrication to 4.6%; adding edge-level verification with one revision round
+takes it to 1.8%, a 2.6-fold reduction. Ranking, however, is unchanged by verification
+(ΔMRR 0.0004, *p* = 0.70), the closed-book agent ranks no worse than either grounded
+configuration, and **no LLM configuration matches a popularity baseline** (MRR 0.029 against
+0.010–0.016; popularity is significantly better than the verified agent, *p* = 0.014). The
+verified agent spends 1.49 million tokens per correct hit in its top 20. A weight-level leakage
+probe with positive and negative controls finds no post-cutoff signal above its own
+false-positive floor.
+
+**Conclusions.** Faithfulness and accuracy are decoupled in current repurposing agents: the
+least faithful configuration ranks best, and the most faithful one does not beat ranking drugs
+by how many indications they already have. Verification is still worth its cost — it removes
+three fifths of the fabricated claims for 9% more input tokens and no measurable loss in ranking
+— but it buys checkability, not discovery. Reporting either quantity alone would have supported
+a conclusion the other contradicts, which is the argument for a benchmark that measures both.
+We also quantify a limit of mechanism-verified evaluation itself: only 59.3% of our positives
+admit any mechanism path in the graph, which caps what a verified-only system can recover
+regardless of the model.
 
 **Availability.** Code, splits, cached evidence and reports: https://github.com/MinhNhat-2504/repurpose-verify
 
@@ -73,8 +93,8 @@ this way, and that reported progress shrinks once leakage is removed [2 verify, 
 **A fluent mechanism is not a verified one.** When an agent explains that drug D hits target T
 which drives disease S, the explanation is usually either taken at face value or scored by
 another language model. Neither establishes that the edges exist. The failure is not
-hypothetical: in our pilot an agent with a literature-search tool available attached twenty
-PubMed identifiers without calling that tool once, and every identifier was invented
+hypothetical: across 200 diseases an agent with a literature-search tool available called it
+once, and every one of the twenty PubMed identifiers it volunteered was invented
 (Section 7.3).
 
 We address both by construction.
@@ -93,8 +113,9 @@ Our contributions are:
 * A mechanism verifier whose evidence taxonomy distinguishes a false claim from an uncheckable
   one, and the demonstration that conflating them inflates measured fabrication threefold
   (Sections 4, 7.3).
-* A measurement of what verification buys: fabricated edges fall 7× when rejected proposals are
-  returned to the agent for one revision round `[PILOT]`.
+* A measurement of what verification buys and what it does not: fabricated edges fall 2.6-fold
+  when rejected proposals are returned for one revision round, while ranking does not move
+  (*p* = 0.70) and no configuration reaches a popularity baseline (Section 7.3).
 * A *verifiable ceiling*: only 59.3% of our positives admit any mechanism path, a bound on
   mechanism-verified evaluation that is a property of the knowledge base, not of the model
   (Section 7.1).
@@ -369,49 +390,77 @@ Under probe-masked scoring (Section 7.4) the same systems move by at most 0.005 
 (199 diseases, 553 positives), indicating the split is not sensitive to the handful of pairs the
 probed model claims to know.
 
-### 7.3 What verification buys `[PILOT]`
+### 7.3 Faithfulness, accuracy, and the gap between them
 
 | System | Proposals | Verified | **Fabricated** | Unresolvable | Malformed path | Invalid citations |
 |---|---|---|---|---|---|---|
-| closed book | 213 | 0.000 | **0.144** | 0.670 | 0.775 | — (cited none) |
-| RAG, no verifier | 173 | 0.705 | **0.228** | 0.000 | 0.012 | **1.000** (20/20) |
-| RAG + verify-revise | 136 | 0.926 | **0.031** | 0.000 | 0.007 | — (cited none) |
+| closed book | 3,516 | 0.003 | **0.211** | 0.695 | 0.676 | — (cited none) |
+| RAG, no verifier | 2,592 | 0.895 | **0.046** | 0.013 | 0.043 | **1.000** (20/20) |
+| RAG + verify-revise | 2,478 | 0.958 | **0.018** | 0.005 | 0.017 | — (cited none) |
 
-**Table 3.** Faithfulness on 12 evaluation diseases, `qwen2.5:7b`. `[PILOT]`
+**Table 3.** Faithfulness over 200 evaluation diseases, `qwen2.5:7b`, 8,586 proposals.
 
-Three findings.
+| System | MRR | Hit@5 | Hit@10 | Hit@20 | Coverage | Correct hits | Input tokens |
+|---|---|---|---|---|---|---|---|
+| Popularity | **0.029** | 0.055 | 0.075 | **0.085** | 1.000 | 17 | 0 |
+| Network proximity | 0.012 | 0.020 | 0.035 | 0.055 | 1.000 | 11 | 0 |
+| ComplEx | 0.007 | 0.000 | 0.020 | 0.045 | 1.000 | 9 | 0 |
+| closed book | 0.016 | 0.040 | 0.050 | 0.055 | 0.995 | 13 | 85,925 |
+| RAG, no verifier | 0.010 | 0.020 | 0.030 | 0.040 | 0.925 | 8 | 11,677,655 |
+| RAG + verify-revise | 0.010 | 0.020 | 0.030 | 0.045 | 0.910 | 9 | 12,735,285 |
 
-**Retrieval tools do not confer faithfulness; checking does.** With the full tool set but no
-verification, 22.8% of the agent's mechanism edges link two real entities that the evidence base
-does not connect. Verifying each edge and returning the rejected proposals for one revision round
-takes that to 3.1% — a 7-fold reduction, and the single largest effect we measure. The agent also
-submits fewer proposals (136 against 173), i.e. part of the gain is the agent withdrawing claims
-it cannot support, which is the intended behaviour.
+**Table 4.** Ranking over the same 200 diseases and 565 positives. "Correct hits" counts
+positives recovered in a top-20 list, summed over diseases.
 
-**Every citation the unverified agent produced was fabricated.** It attached 20 PubMed
-identifiers across its proposals while never calling `search_pubmed`; the identifiers were
-sequential placeholders (`PMID12345`, `PMID12346`, `PMID12347`, …), and all 20 failed resolution
-or the date check. Any evaluation that reads citations without resolving them is blind to this,
-and it is not a rare corner case but the default behaviour of this configuration.
+**Grounding and verification act on faithfulness, strongly.** The closed-book agent fabricates
+21.1% of its mechanism edges, leaves 69.5% unresolvable, produces malformed paths in 67.6% of
+proposals, and has 0.3% of its proposals verified — 12 of 3,516. Adding graph tools takes
+fabrication to 4.6% and unresolvable endpoints to 1.3%. Adding edge-level verification with one
+revision round takes fabrication to 1.8%: three fifths of the remaining fabricated claims
+disappear, for 9% more input tokens. The verified agent also submits fewer proposals (2,478
+against 2,592), part of the gain being claims withdrawn rather than repaired, which is the
+intended behaviour.
 
-**Without tools the output is not false so much as uncheckable.** The closed-book model's
-mechanism endpoints are 67.0% unresolvable and 77.5% of its paths are malformed: it writes
-processes ("inflammation", "oxidative stress", "retinal cell death") where the format asks for
-entities. Its *fabricated* rate, 0.144, is lower than the unverified agent's, because fewer of
-its claims are checkable at all. Reporting a single merged number would have ranked it as the
-most faithful system of the three on the "fabricated" column while hiding that none of its 213
-proposals passed verification.
+**They do not act on accuracy at all.** Verification moves MRR by 0.0004 (paired bootstrap over
+diseases, *p* = 0.70) and Hit@20 by 0.005 (*p* = 0.70). The closed-book agent — the least
+faithful system by every measure — ranks *better* than both grounded configurations on MRR
+(0.016 against 0.010), though not significantly so (*p* = 0.41). And no LLM configuration
+reaches the popularity baseline: ranking drugs by how many indications they already have scores
+MRR 0.029 and Hit@20 0.085, against the verified agent's 0.010 and 0.045, a difference that is
+significant on MRR (*p* = 0.014; on Hit@20, *p* = 0.138).
 
-`[PILOT]` Ranking cannot be compared at this scale: all six systems, baselines included, score
-Hit@K = 0 on these 12 diseases, which are predominantly rare genetic disorders, while the same
-baselines reach Hit@20 = 0.085 over the full 200. Faithfulness is measurable in a pilot; ranking
-is not. Neither agent configuration called `search_pubmed` at all (161 and 144
-`find_mechanism_paths` calls respectively), a behavioural observation we expect to revisit at
-full scale.
+This decoupling is the central empirical result. A paper reporting only faithfulness would
+conclude that verification works; one reporting only ranking would conclude that none of this
+helps and that a frequency heuristic wins. Both are true of the same runs, which is why we argue
+a repurposing benchmark has to measure both.
 
-A caveat on the high verified rate: with a path-enumeration tool available, the agent largely
-submits paths the tool returned, so verification of what it keeps is close to automatic. The
-informative quantities are the differences between configurations, not the absolute rate.
+**The agent ignores the literature.** Across 200 diseases the unverified configuration called
+`search_pubmed` once and made 2,496 `find_mechanism_paths` calls; the verified one called it once
+against 2,645. The unverified agent nevertheless attached 20 PubMed identifiers to its proposals,
+drawn from just two invented placeholders (`PMID12345`, `PMID67890`); all 20 failed resolution or
+the date check, and none of its citations was admissible. The honest reading is not that
+fabricated citations are frequent here — 20 across 2,592 proposals is rare — but that an agent
+given a literature tool declined to use it and still volunteered references, every one of them
+invented. An evaluation that reads citations without resolving them cannot distinguish that from
+genuine support.
+
+**A correction we are recording rather than replacing.** An earlier 12-disease pilot of the same
+three systems gave fabricated-edge rates of 0.144 (closed book), 0.228 (no verifier) and 0.031
+(verified) — a 7.4-fold effect of verification against the 2.6-fold measured here, and a
+citation rate of 20 identifiers per 173 proposals against 20 per 2,592. The pilot overstated the
+effect roughly threefold and made rare behaviour look routine. We report this because
+faithfulness is often measured on a handful of hand-picked cases, and a twelve-disease sample was
+enough to be wrong by a factor of three in the direction that favours the method under test.
+
+**A caveat on the absolute verified rate.** With a path-enumeration tool available, the agent
+largely submits paths the tool returned, so verification of what it keeps is close to automatic;
+95.8% verified says more about the tool than about the model. The informative quantities are the
+differences between configurations.
+
+Stratifying to pairs that reached phase 3 or beyond (115 diseases) leaves the picture intact and
+the LLM systems weaker still: the grounded configurations recover a single positive each in
+their top 20 against popularity's eleven (`runs/report_full_phase3/`). Probe-masked scoring
+(Section 7.4) changes no system by more than 0.001 on any ranking metric.
 
 ### 7.4 Weight-level leakage
 
@@ -445,28 +494,66 @@ per-model report for that purpose.
 
 ### 7.5 Cost
 
-Over 12 diseases the verify-revise agent consumed 795,312 input and 45,009 output tokens
-(≈66,000 input tokens per disease); without verification, 673,110 and 40,298; closed book, 4,653
-and 30,422. Verification costs roughly 18% more input tokens than the unverified agent for the
-7-fold reduction in fabricated edges. On one RTX 4060 (8 GB) a disease takes two to three
-minutes; single-worker execution completed the same 12 diseases faster than four concurrent
-workers against one server (115 s versus 180 s per disease), the concurrency having caused
-stalled requests. Cost per correct hit is reported by the harness but is not yet informative at
-pilot scale. `[PILOT]`
+| System | Input tokens | Output tokens | Correct hits | Tokens per correct hit |
+|---|---|---|---|---|
+| closed book | 85,925 | 502,397 | 13 | **45,256** |
+| RAG, no verifier | 11,677,655 | 590,537 | 8 | 1,533,524 |
+| RAG + verify-revise | 12,735,285 | 701,714 | 9 | 1,493,000 |
+| Popularity | 0 | 0 | 17 | 0 |
+
+**Table 6.** Cost over 200 diseases. Hits are positives recovered in a top-20 list.
+
+Tool use dominates the bill: the grounded configurations read roughly 136 times as many input
+tokens as the closed-book agent, because every path enumeration and candidate screen returns to
+the context. Verification adds 9% on top of that (12.74 M against 11.68 M input tokens) and is
+the cheapest intervention here per unit of faithfulness gained. Per correct hit, however, the
+ordering inverts: the closed-book agent is 33 times cheaper than the verified one and recovers
+more positives, and the popularity baseline costs nothing at all and recovers most. A reader
+deciding whether to deploy an agentic pipeline for *candidate generation*, as opposed to
+candidate *justification*, should weigh that directly.
+
+On one RTX 4060 (8 GB) with a 7B model served locally, a disease takes 96.6 s under verification,
+65.3 s without it and 50.5 s closed book; the three runs over 200 diseases took 11 h 49 min in
+total with no failed requests. Single-worker execution is not a limitation of the hardware but of
+the server: four concurrent turns against one instance stalled, and one worker was also faster
+per disease.
 
 ## 8 Discussion
 
-**Verification is a cheap intervention with a large effect.** The comparison that matters is not
-tools versus no tools but checked versus unchecked: the unverified agent had every tool the
-verified one had. At roughly 18% additional input tokens, edge-level checking with a single
-revision round removed six sevenths of the fabricated claims. Nothing in the mechanism is
-model-specific; it applies to any system that emits structured claims over a knowledge base.
+**Verification is cheap and it works — on the thing it targets.** The comparison that matters is
+not tools versus no tools but checked versus unchecked: the unverified agent had every tool the
+verified one had. For 9% more input tokens, edge-level checking with one revision round removed
+three fifths of the fabricated claims and left ranking statistically unchanged. Nothing in the
+mechanism is model-specific; it applies to any system that emits structured claims over a
+knowledge base. What it does *not* do is make the agent find more true repurposing candidates,
+and we would caution against the inference — easy to make from a faithfulness table alone — that
+a more faithful agent is a more useful one.
 
-**Measurement design decides the headline.** Our own first figure for closed-book fabrication was
-three times too high because the grounding vocabulary lacked gene aliases. Any paper reporting
-hallucination rates against a knowledge base is making a claim about its grounding as much as
-about the model, and we would encourage reporting the two failure modes separately as a matter of
-course.
+**Faithfulness and accuracy are decoupled, and that is a reason to measure both.** In our runs
+the least faithful configuration ranked best among the LLM systems, and the most faithful one
+was significantly worse than ranking drugs by their existing indication count. We do not read
+this as evidence that grounding harms accuracy: the closed-book advantage is not significant, and
+the mechanism path requirement plausibly constrains the grounded agents toward candidates the
+graph can justify, which is a narrower set than the clinically interesting one — the 59.3%
+reachability ceiling (Section 3.4) bounds that explicitly. We read it as evidence that reporting
+either quantity alone invites a conclusion the other contradicts.
+
+**A popularity baseline belongs in every repurposing evaluation.** Ranking by indication count
+beat two structural methods, three LLM configurations, and a knowledge-graph embedding, on a
+split where the answers are by construction absent from the graph. It costs nothing to compute
+and it is the first thing a reviewer should ask for.
+
+**Small-sample faithfulness estimates are unreliable in a predictable direction.** Our own
+12-disease pilot overstated verification's effect by roughly threefold and turned a rare
+behaviour — volunteering invented citations — into an apparent default (Section 7.3). Hand-picked
+case studies are the norm in this literature; a twelve-disease sample was enough to be wrong by a
+factor of three in the direction that favoured our method.
+
+**Measurement design decides the headline.** Our first figure for closed-book fabrication was
+also threefold too high, because the grounding vocabulary lacked gene aliases (Section 4.3). Any
+paper reporting hallucination rates against a knowledge base is making a claim about its
+grounding as much as about the model, and the two failure modes should be reported separately as
+a matter of course.
 
 **What the benchmark cannot settle.** Trial initiation is evidence of clinical interest, not of
 efficacy; tier-stratified results (`--min-tier phase3`, `approved`) are provided for that reason.
@@ -488,8 +575,15 @@ knowledge base that cannot express the mechanism for two of every five positives
 * Grounding is bounded by the vocabulary: informal receptor names and most biological processes
   have no node, which is why *unresolvable* is reported separately rather than folded into
   fabrication.
-* The LLM results are a 12-disease pilot with one open-weight 7B model. Scale, model family and
-  the blinded expert review are pending. `[PILOT]` `[PENDING-REVIEW]`
+* The LLM results come from one open-weight 7B model. The decoupling of faithfulness and
+  accuracy, and the failure to beat a popularity baseline, may not hold for a larger or
+  differently trained model; we report the harness and the split so that claim can be tested
+  rather than argued. A late-cutoff hosted model should be probed (Section 7.4) before its
+  scores are compared with these.
+* Ranking differences among the LLM systems are small relative to their confidence intervals, so
+  the ordering within that group should not be over-read. The comparison that is significant is
+  popularity against the verified agent on MRR (*p* = 0.014).
+* Blinded expert review has not been run. `[PENDING-REVIEW]`
 
 ## 10 Data and code availability
 

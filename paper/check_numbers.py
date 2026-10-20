@@ -25,9 +25,13 @@ GT_REPORT = ROOT / "data" / "processed" / "groundtruth" / "report.json"
 PROBE = ROOT / "runs" / "probes" / "qwen25-7b.jsonl"
 SUMMARIES = {
     "baselines": ROOT / "runs" / "report_baselines" / "summary.csv",
-    "pilot": ROOT / "runs" / "report_pilot" / "summary.csv",
+    "full": ROOT / "runs" / "report_full" / "summary.csv",
     "masked": ROOT / "runs" / "report_masked" / "summary.csv",
+    "phase3": ROOT / "runs" / "report_full_phase3" / "summary.csv",
 }
+COMPARISONS = ROOT / "runs" / "report_full" / "comparisons.csv"
+SYSTEMS = ("qwen25-7b__closed_book", "qwen25-7b__rag_verify-none",
+           "qwen25-7b__rag_verify-revise")
 
 
 def _fmt(value: float, digits: int) -> str:
@@ -77,31 +81,61 @@ def collect_claims() -> list[tuple[str, str, str]]:
             claims.append((f"{system} Hit@{k}", _fmt(row[f"hit@{k}"], 3),
                            "report_baselines/summary.csv"))
 
-    pilot = pd.read_csv(SUMMARIES["pilot"]).set_index("system")
-    for system in ("pilot_closedbook", "pilot_noverify", "pilot_revise"):
-        row = pilot.loc[system]
-        s = "report_pilot/summary.csv"
+    full = pd.read_csv(SUMMARIES["full"]).set_index("system")
+    src = "report_full/summary.csv"
+    for system in SYSTEMS:
+        row = full.loc[system]
         claims += [
-            (f"{system} proposals", str(int(row["proposals"])), s),
-            (f"{system} verified", _fmt(row["verified_rate"], 3), s),
-            (f"{system} fabricated", _fmt(row["fabricated_edge_rate"], 3), s),
-            (f"{system} unresolvable", _fmt(row["unresolvable_edge_rate"], 3), s),
-            (f"{system} malformed", _fmt(row["malformed_path_rate"], 3), s),
-            (f"{system} input tokens", f"{int(row['input_tokens']):,}", s),
-            (f"{system} output tokens", f"{int(row['output_tokens']):,}", s),
+            (f"{system} proposals", f"{int(row['proposals']):,}", src),
+            (f"{system} verified", _fmt(row["verified_rate"], 3), src),
+            (f"{system} fabricated", _fmt(row["fabricated_edge_rate"], 3), src),
+            (f"{system} unresolvable", _fmt(row["unresolvable_edge_rate"], 3), src),
+            (f"{system} malformed", _fmt(row["malformed_path_rate"], 3), src),
+            (f"{system} MRR", _fmt(row["mrr"], 3), src),
+            (f"{system} Hit@20", _fmt(row["hit@20"], 3), src),
+            (f"{system} coverage", _fmt(row["coverage"], 3), src),
+            (f"{system} correct hits", str(int(row["correct_hits"])), src),
+            (f"{system} input tokens", f"{int(row['input_tokens']):,}", src),
+            (f"{system} output tokens", f"{int(row['output_tokens']):,}", src),
+            (f"{system} tokens per hit", f"{int(round(row['tokens_per_correct_hit'])):,}", src),
         ]
-    rev, nov = pilot.loc["pilot_revise"], pilot.loc["pilot_noverify"]
+    rev, nov, cb = (full.loc[SYSTEMS[2]], full.loc[SYSTEMS[1]], full.loc[SYSTEMS[0]])
     claims += [
+        ("total proposals", f"{int(full.loc[list(SYSTEMS), 'proposals'].sum()):,}", src),
         ("fabricated reduction factor",
-         f"{nov['fabricated_edge_rate'] / rev['fabricated_edge_rate']:.0f}-fold",
-         "report_pilot/summary.csv"),
+         f"{nov['fabricated_edge_rate'] / rev['fabricated_edge_rate']:.1f}-fold", src),
         ("verification token overhead",
-         f"{(rev['input_tokens'] / nov['input_tokens'] - 1) * 100:.0f}%",
-         "report_pilot/summary.csv"),
+         f"{(rev['input_tokens'] / nov['input_tokens'] - 1) * 100:.0f}%", src),
+        ("tool-call input blow-up",
+         f"{nov['input_tokens'] / cb['input_tokens']:.0f} times", src),
+        ("closed book cost advantage per hit",
+         f"{rev['tokens_per_correct_hit'] / cb['tokens_per_correct_hit']:.0f} times", src),
+    ]
+
+    cmp_df = pd.read_csv(COMPARISONS)
+    pairs = {(r["system"], r["metric"]): r for _, r in cmp_df.iterrows()}
+    nov_mrr = pairs[(SYSTEMS[1], "mrr")]
+    pop_mrr = pairs[("popularity", "mrr")]
+    pop_h20 = pairs[("popularity", "hit@20")]
+    cb_mrr = pairs[(SYSTEMS[0], "mrr")]
+    src = "report_full/comparisons.csv"
+    claims += [
+        ("verification effect on MRR", _fmt(nov_mrr["diff"], 4), src),
+        ("verification p-value", _fmt(nov_mrr["p"], 2), src),
+        ("popularity vs verified, MRR p", _fmt(pop_mrr["p"], 3), src),
+        ("popularity vs verified, Hit@20 p", _fmt(pop_h20["p"], 3), src),
+        ("closed book vs verified, MRR p", _fmt(cb_mrr["p"], 2), src),
+    ]
+
+    p3 = pd.read_csv(SUMMARIES["phase3"]).set_index("system")
+    claims += [
+        ("phase3 diseases", str(int(p3["n_diseases"].iloc[0])), "report_full_phase3/summary.csv"),
+        ("phase3 popularity hits", str(int(p3.loc["popularity", "correct_hits"])),
+         "report_full_phase3/summary.csv"),
     ]
 
     masked = pd.read_csv(SUMMARIES["masked"]).set_index("system")
-    worst = max(abs(masked.loc[s, "hit@20"] - base.loc[s, "hit@20"]) for s in masked.index)
+    worst = max(abs(masked.loc[k, "hit@20"] - base.loc[k, "hit@20"]) for k in base.index)
     claims.append(("largest Hit@20 shift under masking", _fmt(worst, 3),
                    "report_masked/summary.csv vs report_baselines/summary.csv"))
     claims.append(("masked diseases", str(int(masked["n_diseases"].iloc[0])),

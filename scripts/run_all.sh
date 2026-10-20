@@ -10,9 +10,10 @@ LIMIT="${LIMIT:-}"                       # e.g. LIMIT=50 for a pilot
 LIM=${LIMIT:+--limit $LIMIT}
 
 # ---------------------------------------------------------------- data
-$RV download all
+$RV download all                         # PrimeKG parts + MONDO + HGNC aliases
 $RV build-kg
 $RV build-gt
+$RV audit-mapping -n 200                 # sample for hand-checking entity resolution
 
 # ---------------------------------------------------------------- baselines
 $RV baseline popularity $LIM
@@ -22,6 +23,8 @@ $RV baseline transe --epochs 5 $LIM
 # $RV import-rankings txgnn_scores.csv --run-name txgnn --knowledge-cutoff 2021-12-31
 
 # ---------------------------------------------------------------- LLM systems
+# For the reported runs over every evaluation disease, prefer scripts/run_full.sh: it runs the
+# systems sequentially with retries, which a single local server needs.
 $RV agent --model "$MODEL" --mode closed_book $LIM
 $RV agent --model "$MODEL" --verifier none    $LIM
 $RV agent --model "$MODEL" --verifier filter  $LIM

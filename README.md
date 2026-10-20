@@ -46,21 +46,30 @@ Requiring ≥1 associated gene per evaluation disease (`min_disease_genes`) drop
 
 Ranking ~8,000 drugs for an average of 2.8 unseen positives per disease is hard, and these numbers say so. A benchmark where the trivial baseline already scores well would not be measuring anything.
 
-### What the verifier finds (12-disease pilot, qwen2.5-7b, 16k context)
+### What the verifier finds (200 diseases, 8,586 proposals, qwen2.5-7b, 16k context)
 
-| System | Proposals | Verified | **Fabricated** | Unresolvable | Invalid citations |
-|---|---|---|---|---|---|
-| closed book (no retrieval) | 213 | 0.000 | **0.144** | 0.670 | – (cited nothing) |
-| RAG, no verifier | 173 | 0.705 | **0.228** | 0.000 | **1.000** (20 of 20) |
-| RAG + verify-revise | 136 | 0.926 | **0.031** | 0.000 | – (cited nothing) |
+| System | Proposals | Verified | **Fabricated** | Unresolvable | Malformed path | Invalid citations |
+|---|---|---|---|---|---|---|
+| closed book (no retrieval) | 3,516 | 0.003 | **0.211** | 0.695 | 0.676 | – (cited nothing) |
+| RAG, no verifier | 2,592 | 0.895 | **0.046** | 0.013 | 0.043 | **1.000** (20 of 20) |
+| RAG + verify-revise | 2,478 | 0.958 | **0.018** | 0.005 | 0.017 | – (cited nothing) |
 
-Two results, both measured rather than assumed:
+And the same runs scored for accuracy:
 
-**Verification cuts fabricated edges 7×, from 0.228 to 0.031.** Giving the agent graph tools is not what makes it faithful — unverified, it still asserts 23% of its mechanism edges without support. Checking each edge and handing the rejects back for one revision round is what moves the number.
+| System | MRR | Hit@10 | Hit@20 | Coverage | Correct hits | Input tokens |
+|---|---|---|---|---|---|---|
+| **popularity** (trivial baseline) | **0.029** | 0.075 | **0.085** | 1.000 | **17** | 0 |
+| closed book | 0.016 | 0.050 | 0.055 | 0.995 | 13 | 85,925 |
+| RAG, no verifier | 0.010 | 0.030 | 0.040 | 0.925 | 8 | 11,677,655 |
+| RAG + verify-revise | 0.010 | 0.030 | 0.045 | 0.910 | 9 | 12,735,285 |
 
-**Every citation the unverified agent produced was fake.** It attached 20 PMIDs across its proposals and never once called `search_pubmed`; the ids were sequential placeholders — `PMID12345`, `PMID12346`, `PMID12347` … — so all 20 failed the check. This is exactly the failure mode the benchmark exists to catch, and it is invisible to any evaluation that reads citations without resolving them.
+**Grounding and verification act on faithfulness, not on accuracy.** Verification takes fabricated edges from 0.046 to 0.018 — three fifths of them — for 9% more input tokens, and moves MRR by 0.0004 (paired bootstrap, *p* = 0.70). The closed-book agent, least faithful by every measure, ranks *better* than both grounded configurations (not significantly, *p* = 0.41). No LLM configuration reaches the popularity baseline, which is significantly better than the verified agent on MRR (*p* = 0.014) and costs nothing to compute.
 
-A note on what this pilot cannot show: all six systems, baselines included, score Hit@K = 0 on these 12 diseases, which are mostly rare genetic disorders. Over the full 200-disease set the same baselines reach Hit@20 = 0.085, so ranking differences need the full run — faithfulness is measurable at pilot scale, ranking is not. Neither agent configuration called `search_pubmed` at all; both leaned entirely on `find_mechanism_paths` (144 and 161 calls).
+Report either number alone and you get the opposite conclusion. That is the argument for measuring both.
+
+**The agent ignores the literature tool.** Across 200 diseases it called `search_pubmed` once, against 2,496 `find_mechanism_paths` calls — yet still attached 20 PubMed ids, drawn from two invented placeholders (`PMID12345`, `PMID67890`). All 20 failed resolution or the date check; none of its citations was admissible. Rare, but invisible to any evaluation that reads citations without resolving them.
+
+**A 12-disease pilot of the same systems was wrong by 3×.** It gave 0.228 → 0.031 fabricated (a 7.4-fold effect against the 2.6-fold measured here) and 20 citations per 173 proposals rather than per 2,592. The error ran in the direction that favoured the method under test, which is worth knowing given how often faithfulness is reported on a handful of cases.
 
 Reading the fabricated and unresolvable columns apart is the point:
 
@@ -69,7 +78,9 @@ Reading the fabricated and unresolvable columns apart is the point:
 
 An earlier version of this table reported 0.953 "fabricated" for closed book. That number was wrong, and the way it was wrong is worth recording: "COX-2" is not an invented entity, it is PTGS2 under the name every pharmacologist uses. Grounding now loads HGNC alias symbols (44,495 genes, joined on NCBI gene id — never by name, because a substring search for "COX-2" returns COX2, a mitochondrial subunit of a different protein) and a small curated pin file for the few aliases where HGNC itself disagrees with drug-mechanism usage (`data/manual/gene_aliases.csv`; HGNC lists COX-2 as an alias of *PTGER2*). Mentions that still match several nodes are reported as *ambiguous* rather than silently resolved, because a wrong grounding could turn an invented edge into a supported one.
 
-A caveat on the high verified rate: with `find_mechanism_paths` available, the agent largely submits paths the tool handed it, so verification is close to automatic for the proposals it keeps. The informative quantities are the differences between configurations — 0.228 → 0.031 fabricated with verification on, 0.670 unresolvable without tools — not the absolute rate.
+A caveat on the high verified rate: with `find_mechanism_paths` available, the agent largely submits paths the tool handed it, so verification is close to automatic for the proposals it keeps — 0.958 says more about the tool than about the model. The informative quantities are the differences between configurations: 0.046 → 0.018 fabricated with verification on, 0.695 unresolvable without tools.
+
+Full tables, including the phase-3 stratum and probe-masked scoring: `runs/report_full/report.md`, `runs/report_full_phase3/`, `runs/report_full_masked/`. The manuscript draft is in [paper/draft.md](paper/draft.md).
 
 ## Systems and ablations
 
