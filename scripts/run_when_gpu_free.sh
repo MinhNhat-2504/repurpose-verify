@@ -58,6 +58,28 @@ status "GPU free, starting $MODEL"
 $RV probe --model "$MODEL" --controls 200 >> "$LOG/${MODEL}_probe.log" 2>&1
 status "probe done"
 
+# Gate the long runs on the tool path actually working for this model. The probe exercises
+# plain chat only, so a model whose tool-call format the harness mishandles would still pass it
+# and then produce 200 empty rankings over six hours. Three diseases cost a few minutes.
+SMOKE="${MODEL}__smoke"
+rm -rf "runs/$SMOKE"
+$RV agent --model "$MODEL" --verifier revise --limit 3 --workers 1 --run-name "$SMOKE" \
+  >> "$LOG/${MODEL}_smoke.log" 2>&1
+PROPOSALS=$(python - "$SMOKE" <<'PY'
+import json, pathlib, sys
+path = pathlib.Path("runs") / sys.argv[1] / "rankings.jsonl"
+rows = [json.loads(l) for l in path.read_text(encoding="utf-8").splitlines() if l.strip()] \
+    if path.exists() else []
+print(sum(len(r.get("proposals", [])) for r in rows))
+PY
+)
+status "smoke test: $PROPOSALS proposals over 3 diseases"
+if [ "${PROPOSALS:-0}" -lt 1 ]; then
+  status "ABORT - the agent produced no proposals; check $LOG/${MODEL}_smoke.log before"
+  status "       spending twelve hours on a model whose tool calls are not being parsed"
+  exit 1
+fi
+
 MODEL="$MODEL" LOG="$LOG" bash scripts/run_full.sh >> "$LOG/${MODEL}_full.log" 2>&1
 status "runs done"
 
