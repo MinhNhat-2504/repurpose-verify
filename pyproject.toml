@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "repurpose-verify"
+version = "0.1.0"
+description = "Mechanism-verified, time-split benchmark for LLM agents in drug repurposing"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = [
+    "numpy>=1.24",
+    "pandas>=2.0",
+    "scipy>=1.10",
+    "requests>=2.31",
+    "rapidfuzz>=3.0",
+    "tqdm>=4.65",
+]
+
+[project.optional-dependencies]
+openai = ["openai>=1.40"]
+anthropic = ["anthropic>=0.70"]
+kge = ["torch>=2.1"]
+dev = ["pytest>=7"]
+all = ["openai>=1.40", "anthropic>=0.70", "torch>=2.1", "pytest>=7"]
+
+[project.scripts]
+repurpose-verify = "repurpose_verify.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

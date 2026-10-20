@@ -1,0 +1,19 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+.env
+
+# Large / regenerable data
+data/raw/
+data/processed/
+data/cache/
+runs/
+
+# Keep curated inputs
+!data/manual/
+
+# Internal planning document, not part of the paper repo
+*.pdf
