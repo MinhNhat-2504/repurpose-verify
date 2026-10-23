@@ -145,17 +145,22 @@ def collect_claims() -> list[tuple[str, str, str]]:
                    "report_masked/summary.csv"))
 
     # Section 7.6: role sensitivity of "verified", re-scored without any model inference.
+    # The default-verifier figures are read from report_full rather than from report_strict,
+    # which may hold only the re-scored runs: requiring both in one file made this whole block
+    # silently emit nothing when the strict report was regenerated with the _strict runs alone.
     if STRICT.exists():
         strict = pd.read_csv(STRICT).set_index("system")
-        src = "report_strict/summary.csv"
+        src = "report_strict/summary.csv + report_full/summary.csv"
         for base in (SYSTEMS[2], SYSTEMS[1]):
             name = f"{base}_strict"
-            if name not in strict.index or base not in strict.index:
+            if name not in strict.index:
                 continue
+            defaults = strict if base in strict.index else full
             claims += [
-                (f"{base} verified, default", _fmt(strict.loc[base, "verified_rate"], 3), src),
+                (f"{base} verified, default", _fmt(defaults.loc[base, "verified_rate"], 3), src),
                 (f"{base} verified, target-only", _fmt(strict.loc[name, "verified_rate"], 3), src),
-                (f"{base} malformed, default", _fmt(strict.loc[base, "malformed_path_rate"], 3), src),
+                (f"{base} malformed, default",
+                 _fmt(defaults.loc[base, "malformed_path_rate"], 3), src),
                 (f"{base} malformed, target-only",
                  _fmt(strict.loc[name, "malformed_path_rate"], 3), src),
             ]
@@ -238,6 +243,14 @@ def collect_claims() -> list[tuple[str, str, str]]:
     return claims
 
 
+def _artefact_present(name: str) -> bool:
+    """Does a report directory of this name hold anything the checker could read?"""
+    base = ROOT / "runs"
+    if name == "report_external":
+        return any(p.exists() for p in EXTERNAL)
+    return (base / name / "summary.csv").exists()
+
+
 def main() -> int:
     required = [DRAFT, GT_REPORT, PROBE, COMPARISONS, *SUMMARIES.values()]
     missing = [p for p in required if not p.exists()]
@@ -249,11 +262,26 @@ def main() -> int:
     text = DRAFT.read_text(encoding="utf-8")
     # Numbers are written with thousands separators in prose and without in tables.
     haystack = text + "\n" + re.sub(r"(?<=\d),(?=\d)", "", text)
-    failures = []
-    for label, expected, source in collect_claims():
-        if expected not in haystack:
-            failures.append((label, expected, source))
-    print(f"{len(collect_claims()) - len(failures)} claims verified against the artefacts.")
+    claims = collect_claims()
+    failures = [(label, expected, source) for label, expected, source in claims
+                if expected not in haystack]
+    print(f"{len(claims) - len(failures)} claims verified against the artefacts.")
+
+    # A block that stops producing claims is worse than one that fails: the checker keeps
+    # reporting success while guarding less. Each artefact that exists is expected to
+    # contribute, so silence from one is reported loudly.
+    contributing = {source for _, _, source in claims}
+    silent = [name for name, token in (("report_strict", "report_strict"),
+                                       ("report_external", "report_external"),
+                                       ("report_full_phase3", "report_full_phase3"),
+                                       ("report_masked", "report_masked"))
+              if _artefact_present(name) and not any(token in s for s in contributing)]
+    if silent:
+        print("\nArtefacts present but contributing no claims - the guard has weakened:")
+        for name in silent:
+            print(f"  {name}")
+        return 1
+
     if failures:
         print(f"\n{len(failures)} claim(s) in draft.md are not supported:")
         for label, expected, source in failures:
