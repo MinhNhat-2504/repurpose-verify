@@ -1,6 +1,8 @@
 import json
 from datetime import date
 
+import pytest
+
 from repurpose_verify.agent.agent import AgentSettings, RepurposingAgent
 from repurpose_verify.agent.llm import AssistantTurn, MockClient, ToolCall
 from repurpose_verify.agent.tools import Toolbox
@@ -123,6 +125,37 @@ def test_run_agent_parallel_and_resumable(kg, tmp_path):
     assert len(list(read_jsonl(out))) == 3
     run_agent(factory, [9, 10, 8, 0], out, workers=2)
     assert len(list(read_jsonl(out))) == 4
+
+
+def test_server_failures_are_not_results(kg, tmp_path):
+    """A dead server must not fill the file with empty records that resume treats as done."""
+    from repurpose_verify.agent.agent import ServerUnreachable, run_agent
+    from repurpose_verify.utils import read_jsonl, write_jsonl
+
+    out = tmp_path / "run" / "rankings.jsonl"
+
+    def dead_server(*a):
+        raise ConnectionError("connection refused")
+
+    factory = lambda: make_agent(kg, dead_server, mode="rag", verifier="filter")  # noqa: E731
+    with pytest.raises(ServerUnreachable):
+        run_agent(factory, [8, 9, 10, 0, 1, 2, 3], out, workers=1, max_consecutive_failures=3)
+    # Nothing was written: an unreachable server produced no results, not empty ones.
+    assert not out.exists() or list(read_jsonl(out)) == []
+
+    # A record stored from an earlier crash is re-run rather than counted as done.
+    write_jsonl(out, [
+        {"disease_idx": 9, "ranked": [], "proposals": [],
+         "trace": {"errors": ["APIConnectionError: Connection error."]}},
+        {"disease_idx": 10, "ranked": [{"drug_idx": 2}], "proposals": [],
+         "trace": {"errors": []}},
+    ])
+    good = lambda *a: call("submit_proposals", proposals=[GOOD])  # noqa: E731
+    run_agent(lambda: make_agent(kg, good, mode="rag", verifier="filter"), [9, 10], out, workers=1)
+    rows = {r["disease_idx"]: r for r in read_jsonl(out)}
+    assert set(rows) == {9, 10}
+    assert rows[9]["ranked"] == [{"drug_idx": 0, "drug": "Metformin", "verified": True}]
+    assert rows[10]["ranked"] == [{"drug_idx": 2}]      # the clean record was left alone
 
 
 def test_extract_json():

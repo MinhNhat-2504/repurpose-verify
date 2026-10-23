@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import Callable
 
 from ..data.kg import DRUG, KnowledgeGraph
-from ..utils import append_jsonl, extract_json, read_jsonl
+from ..utils import append_jsonl, extract_json, read_jsonl, write_jsonl
 from ..verify.schema import Proposal
 from ..verify.verifier import MechanismVerifier, Verification
 from . import prompts
@@ -258,14 +258,39 @@ class RepurposingAgent:
         return rows
 
 
+class ServerUnreachable(RuntimeError):
+    """The model server stopped answering; the run must not carry on manufacturing records."""
+
+
+# Failures that mean the server is gone rather than the model behaving badly. A record produced
+# under one of these is not a result, so it is neither written nor counted as done - otherwise a
+# crashed server quietly fills the file with empty rankings that resume will never revisit.
+INFRASTRUCTURE_ERRORS = ("APIConnectionError", "APITimeoutError", "InternalServerError",
+                         "ConnectError", "ReadTimeout", "ConnectionError")
+
+
+def _is_infrastructure_failure(rec: dict) -> bool:
+    return any(e.split(":")[0] in INFRASTRUCTURE_ERRORS for e in rec.get("trace", {}).get("errors", []))
+
+
 def run_agent(agent_factory: Callable[[], RepurposingAgent], disease_ids: list[int], out_path: Path,
-              workers: int = 1, meta: dict | None = None) -> Path:
-    """Run every disease (resumable: diseases already in ``out_path`` are skipped)."""
+              workers: int = 1, meta: dict | None = None, max_consecutive_failures: int = 5) -> Path:
+    """Run every disease.
+
+    Resumable, and a disease whose stored record failed against the server counts as unfinished:
+    treating it as done is how a dead server turns into a quietly incomplete result set.
+    """
     out_path = Path(out_path)
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    done = set()
+    done, retry = set(), set()
     if out_path.exists():
-        done = {r["disease_idx"] for r in read_jsonl(out_path)}
+        for r in read_jsonl(out_path):
+            (retry if _is_infrastructure_failure(r) else done).add(r["disease_idx"])
+    retry -= done
+    if retry:
+        log.warning("%d stored records failed against the server and will be re-run", len(retry))
+        rows = [r for r in read_jsonl(out_path) if r["disease_idx"] not in retry]
+        write_jsonl(out_path, rows)
     todo = [d for d in disease_ids if d not in done]
     if meta:
         (out_path.parent / "meta.json").write_text(json.dumps(meta, indent=2, default=str),
@@ -274,10 +299,26 @@ def run_agent(agent_factory: Callable[[], RepurposingAgent], disease_ids: list[i
     lock = threading.Lock()
     local = threading.local()
 
+    consecutive = 0
+
     def work(d: int) -> dict:
+        nonlocal consecutive
         if not hasattr(local, "agent"):
             local.agent = agent_factory()
         rec = local.agent.run_disease(d)
+        if _is_infrastructure_failure(rec):
+            with lock:
+                consecutive += 1
+                n = consecutive
+            log.warning("disease %s failed against the server (%d in a row): %s",
+                        d, n, rec["trace"]["errors"][:1])
+            if n >= max_consecutive_failures:
+                raise ServerUnreachable(
+                    f"{n} consecutive server failures - stopping so the run can be retried once "
+                    f"the server is back, rather than writing empty records for every disease")
+            return rec
+        with lock:
+            consecutive = 0
         append_jsonl(out_path, rec, lock)
         return rec
 
