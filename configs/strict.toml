@@ -1,0 +1,3 @@
+# Sensitivity analysis: only a curated drug target may start a mechanism path.
+[verifier]
+require_target_first_edge = true

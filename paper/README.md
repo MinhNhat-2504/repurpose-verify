@@ -64,6 +64,7 @@ fix the draft if the runs are newer, re-read the artefact if the draft is.
 | §7.4 leakage probe | `runs/probes/qwen25-7b.jsonl`, `runs/probes/qwen25-7b.md` |
 | §7.5 cost | `runs/report_full/summary.csv` |
 | masked scoring | `runs/report_masked/`, `runs/report_full_masked/` |
+| strict target sensitivity | `configs/strict.toml`, `runs/report_strict/` |
 
 ## Figures
 

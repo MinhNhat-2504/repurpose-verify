@@ -10,8 +10,15 @@
 # on one 8 GB GPU.
 set -u
 
-export PYTHONPATH="${PYTHONPATH:-src}"
-RV="python -m repurpose_verify"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT_DIR" || exit 1
+unset PYTHONPATH
+PYTHON_BIN="${PYTHON_BIN:-/mnt/c/Users/Minh Nhat/AppData/Local/Programs/Python/Python311/python.exe}"
+if ! "$PYTHON_BIN" -c 'import numpy' >/dev/null 2>&1; then
+  echo "Python interpreter '$PYTHON_BIN' cannot import numpy; set PYTHON_BIN." >&2
+  exit 1
+fi
+rv() { "$PYTHON_BIN" -m repurpose_verify "$@"; }
 MODEL="${MODEL:-qwen25-7b}"
 LOG="${LOG:-runs/logs}"
 mkdir -p "$LOG"
@@ -25,7 +32,7 @@ run_system() {           # run_system <run-name> <extra args...>
   target=$(( $(wc -l < data/processed/groundtruth/eval_diseases.csv) - 1 ))
   for attempt in 1 2 3; do
     status "$name attempt $attempt"
-    $RV agent --model "$MODEL" --workers 1 --run-name "$name" "$@" >> "$LOG/$name.log" 2>&1
+    rv agent --model "$MODEL" --workers 1 --run-name "$name" "$@" >> "$LOG/$name.log" 2>&1
     done_count=$(wc -l < "runs/$name/rankings.jsonl" 2>/dev/null || echo 0)
     status "$name: $done_count/$target diseases after attempt $attempt"
     [ "$done_count" -ge "$target" ] && return 0
@@ -48,11 +55,24 @@ REF="${MODEL}__rag_verify-revise"
 RUNS="runs/${MODEL}__rag_verify-revise runs/${MODEL}__rag_verify-none runs/${MODEL}__closed_book"
 RUNS="$RUNS runs/popularity runs/proximity runs/complex"
 
-$RV evaluate --runs $RUNS --reference "$REF" --out runs/report_full
-$RV evaluate --runs $RUNS --reference "$REF" --probe "runs/probes/${MODEL}.jsonl" \
-  --out runs/report_full_masked
-$RV evaluate --runs $RUNS --reference "$REF" --min-tier phase3 --out runs/report_full_phase3
-$RV review export --runs runs/${MODEL}__* --out runs/review --n-items 60
+# The manuscript's tables are read from runs/report_full, which belongs to the primary model.
+# A second model running with the defaults would overwrite them, and the numbers in the draft
+# would silently stop matching their artefacts, so reports are namespaced per model unless the
+# model is the primary one.
+if [ "$MODEL" = "${PRIMARY_MODEL:-qwen25-7b}" ]; then
+  REPORT_PREFIX="${REPORT_PREFIX:-runs/report_full}"
+  REVIEW_DIR="${REVIEW_DIR:-runs/review}"
+else
+  REPORT_PREFIX="${REPORT_PREFIX:-runs/report_${MODEL}}"
+  REVIEW_DIR="${REVIEW_DIR:-runs/review_${MODEL}}"
+fi
+status "reports -> ${REPORT_PREFIX}*, review sheet -> ${REVIEW_DIR}"
 
-status "DONE - runs/report_full/report.md"
+rv evaluate --runs $RUNS --reference "$REF" --out "$REPORT_PREFIX"
+rv evaluate --runs $RUNS --reference "$REF" --probe "runs/probes/${MODEL}.jsonl" \
+  --out "${REPORT_PREFIX}_masked"
+rv evaluate --runs $RUNS --reference "$REF" --min-tier phase3 --out "${REPORT_PREFIX}_phase3"
+rv review export --runs runs/${MODEL}__* --out "$REVIEW_DIR" --n-items 60
+
+status "DONE - ${REPORT_PREFIX}/report.md"
 echo "Now update paper/draft.md from the new tables and re-run: python paper/check_numbers.py"
