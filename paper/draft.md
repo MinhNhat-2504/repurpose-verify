@@ -1,22 +1,26 @@
 # Can an LLM agent justify what it recommends? A mechanism-verified, time-split benchmark for drug repurposing
 
-**Authors.** [Author 1]¹, [Pharmacy/pharmacology co-author]², [Senior author]¹
-¹ [Affiliation], ² [Affiliation]
-Corresponding author: [e-mail]
+**Authors.** Nhat Trinh Ngoc Minh¹ (ORCID 0009-0006-9477-9642),
+Linh Nguyen Thi My¹ (ORCID 0000-0003-3990-312X)
+
+¹ Faculty of Information Technology, Van Lang School of Technology, Van Lang University,
+69/68 Dang Thuy Tram Street, Binh Loi Trung Ward, Ho Chi Minh City, Vietnam
+
+**Corresponding author:** Linh Nguyen Thi My, linh.ntm@vlu.edu.vn
+**Author e-mails:** nhat.2474802010280@vanlanguni.vn; linh.ntm@vlu.edu.vn
 
 ---
 
-> **Draft status (2026-10-21).** Every number in this draft is measured at full scale — 200
-> evaluation diseases, three LLM systems, three knowledge-graph baselines — and reproducible
-> from the released code. `paper/check_numbers.py` re-derives each one from the stored
+> **Draft status (2026-10-24).** Every number in this draft is measured at full scale — 200
+> evaluation diseases, two models, three LLM systems each, three knowledge-graph baselines — and
+> reproducible from the released code. `paper/check_numbers.py` re-derives each one from the stored
 > artefacts and fails if the text disagrees.
 >
 > Every result is in. Section 6.4 replaces the conventional blinded rating panel with three
 > checks that need no expert rater — independent ChEMBL confirmation of the drug–target claims,
 > a stricter reading of which graph relations count as a mechanism, and post-cutoff literature
-> corroboration against matched controls. A 20-item spot check by a pharmacologist co-author
-> remains desirable for face validity and is marked `[PENDING-REVIEW]`; it is not a primary
-> outcome and no conclusion rests on it.
+> corroboration against matched controls. No expert rating of the proposals was carried out,
+> and none of the conclusions rests on one.
 >
 > An earlier version of this draft reported a 12-disease pilot in which verification cut
 > fabricated edges 7-fold. At full scale the reduction is 2.6-fold (Section 7.3). The pilot
@@ -381,9 +385,9 @@ independent of ClinicalTrials.gov. Co-mention is weak evidence, and a system tha
 drugs scores well on it, so each system is compared with a control of random drugs drawn for the
 same diseases, as in the leakage probe.
 
-A 20-item spot check by a pharmacologist co-author remains useful for face validity and is a
-ten-minute task; we do not report inter-rater agreement on it and do not treat it as a primary
-outcome. `[PENDING-REVIEW]`
+We did not carry out an expert rating of any size, and we do not report one. Readers who want a
+face-validity impression can take it from the worked examples in Sections 4.3 and 7.3 and from the
+released proposals, each of which carries its full verification record.
 
 ## 7 Results
 
@@ -818,22 +822,74 @@ knowledge base that cannot express the mechanism for two of every five positives
 * Ranking differences among the LLM systems are small relative to their confidence intervals, so
   the ordering within that group should not be over-read. The comparison that is significant is
   popularity against the verified agent on MRR (*p* = 0.014).
-* No human expert has rated the proposals. Section 6.4 argues that the checks we report answer
-  more of what a reviewer needs than a plausibility panel would, but they do not establish that
-  a pharmacologist would find the surviving mechanisms sensible, and a 20-item spot check is
-  outstanding. `[PENDING-REVIEW]`
+* No human expert rated the proposals. Section 6.4 argues that the checks we report answer more
+  of what a reviewer needs than a plausibility panel would, and that they are reproducible where
+  a panel is not, but they do not establish that a pharmacologist would find the surviving
+  mechanisms sensible. A reader who regards expert plausibility as necessary should treat that as
+  missing rather than as covered by the automated checks.
 * The literature control matches on knowledge-graph degree rather than publication volume, which
   under-corrects for how much a drug is written about (Section 7.6).
 
-## 10 Data and code availability
+## 10 Availability of supporting data and materials
 
-Code, configuration, splits and reports: https://github.com/MinhNhat-2504/repurpose-verify.
-The repository builds the graph and the ground truth from public sources (PrimeKG, MONDO, HGNC,
-ClinicalTrials.gov API v2, PubMed E-utilities) and caches every external response, so a reported
-run can be re-scored or re-executed offline. A `reverify` command re-scores saved proposals with
-an updated verifier without re-running any model, which is how the revised taxonomy in
-Section 4.3 was applied to runs already completed. The suite comprises 45 tests over a synthetic
-graph and a mock model, requiring no network access.
+**Project name.** repurpose-verify
+**Project home page.** https://github.com/MinhNhat-2504/repurpose-verify
+**Operating system.** Platform independent (developed and run on Windows 11 and WSL)
+**Programming language.** Python ≥ 3.10
+**Other requirements.** numpy, pandas, scipy, requests, rapidfuzz, tqdm; PyTorch ≥ 2.1 for the
+knowledge-graph embedding baselines; an OpenAI-compatible or Anthropic endpoint for the agent
+**Licence.** MIT
+**RRID / archive.** `[to be assigned on deposit]`
+
+The repository builds the knowledge graph and the time-split ground truth from public sources and
+caches every external response, so a reported run can be re-scored, or re-executed offline, from
+the archived evidence. The evaluation splits, the cached source responses, every run's proposals
+with their full verification records, and the generated reports will be deposited in the
+*GigaScience* repository GigaDB, and the DOI inserted here `[to be assigned on deposit]`.
+
+A `reverify` command re-scores saved proposals with an updated verifier without re-running any
+model, which is how the revised taxonomy in Section 4.3 was applied to runs already completed.
+`paper/check_numbers.py` re-derives every number quoted in this manuscript from those artefacts
+and fails if the text disagrees. The test suite comprises 55 tests over a synthetic graph and a
+mock model and requires no network access.
+
+### Source versions
+
+| Resource | Version / access date |
+|---|---|
+| PrimeKG | Harvard Dataverse doi:10.7910/DVN/IXA7BM, `nodes.tab` + `edges.csv` |
+| Mondo Disease Ontology | `mondo.obo`, retrieved 2026-10-20 |
+| HGNC | `hgnc_complete_set.txt`, retrieved 2026-10-21 |
+| ClinicalTrials.gov | API v2, queried 2026-10-20 |
+| PubMed | E-utilities, queried 2026-10-20 to 2026-10-24 |
+| ChEMBL | REST API, queried 2026-10-21 and 2026-10-24 |
+| UniChem | API v1, same dates |
+| Models | `qwen2.5:7b` and `llama3.1:8b` served by Ollama 0.35.0, each rebuilt with `num_ctx` 16384 |
+| Hardware | one NVIDIA RTX 4060 Laptop GPU (8 GB) |
+
+## 11 Declarations
+
+**Abbreviations.** CT.gov: ClinicalTrials.gov; DTI: drug–target interaction; HGNC: HUGO Gene
+Nomenclature Committee; KG: knowledge graph; LLM: large language model; MoA: mechanism of action;
+MONDO: Mondo Disease Ontology; MRR: mean reciprocal rank; PPI: protein–protein interaction;
+RAG: retrieval-augmented generation.
+
+**Competing interests.** The authors declare that they have no competing interests.
+
+**Funding.** `[to be completed by the authors]`
+
+**Author contributions.** `[to be confirmed by the authors]` — e.g. NTNM designed and implemented
+the benchmark, the verifier and the evaluation, ran the experiments and drafted the manuscript;
+NTML supervised the work, advised on pharmacological interpretation and revised the manuscript.
+Both authors read and approved the final manuscript.
+
+**Acknowledgements.** `[to be completed by the authors]`
+
+**Use of large language models.** An LLM-based coding assistant was used during implementation of
+the software and in preparing the manuscript text. The authors verified all code, re-derived
+every reported number from the stored artefacts with `paper/check_numbers.py`, and checked every
+reference against an authoritative record (see the reference audit note). The authors take full
+responsibility for the content.
 
 ## References
 

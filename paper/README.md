@@ -20,38 +20,45 @@ citations cannot carry numbers nobody re-derived.
 Each claim is printed with the file it came from, so a mismatch tells you which side is stale —
 fix the draft if the runs are newer, re-read the artefact if the draft is.
 
+## Target venue: GigaScience
+
+Chosen after reading the actual author instructions rather than from reputation. The deciding
+facts:
+
+* **Briefings in Bioinformatics was ruled out.** It lists no original-research article type; the
+  closest routes (problem-solving protocol, case study) cap at 5,000 words and reviews at 7,000,
+  against a 9,800-word manuscript whose contribution is the measurement design. Cutting by half
+  would remove the argument and leave the negative results undefended.
+* **GigaScience accepts Research articles with no stated word limit**, publishes benchmarks and
+  negative results, and requires exactly what this project already has: data deposited with a
+  persistent identifier, code in a repository under an OSI licence (MIT here), and software cited
+  with versions.
+
+Journal of Cheminformatics was dropped on scope — its remit is cheminformatics and molecular
+modelling, and this work is knowledge graphs, trial records and agent evaluation. Journal of
+Biomedical Informatics remains a reasonable fallback; its guidelines could not be retrieved
+(Elsevier returns 403 to automated requests) and should be read before it is considered.
+
+GigaScience's quartile should be confirmed on SCImago before submission; aggregators report Q1
+but disagree on the impact factor (3.9 vs 4.33), and SCImago blocks automated access.
+
 ## Outstanding before submission
 
-1. **Expert review is no longer on the critical path.** Section 6.4 replaces the two-rater panel
-   with three checks that need no pharmacological judgement:
-   * `validate moa` — ChEMBL mechanism-of-action confirmation of the drug→target edges, with
-     drugs mapped through UniChem by structure. This answers the objection a panel would not:
-     that the verifier accepts edges from the same graph the agent reads.
-   * `reverify --config strict.toml` with `verifier.require_target_first_edge = true` — how much
-     of the verified rate survives requiring a curated target rather than a metabolising enzyme.
-     Costs no inference.
-   * `validate literature` — post-cutoff PubMed co-mention of the top proposals against a
-     random-drug control.
-
-   The blinded sheet still exists at `runs/review/review_sheet.csv` (60 anonymised, shuffled
-   proposals) if a rater becomes available. A **20-item spot check by the pharmacologist
-   co-author** is worth having for face validity — ten minutes, one rater, reported as a spot
-   check with no κ — but it is not a primary outcome. A non-expert can instead fill
-   `data/processed/groundtruth/mapping_audit.csv` (from `audit-mapping`), which asks only whether
-   a trial's drug and condition were matched to the right entities; that covers the mapping
-   precision limitation, which is what reviewers press on.
-2. **Curated approvals.** `data/manual/approvals_after_cutoff.csv` is empty; FDA/EMA
+1. **Deposit in GigaDB** and paste the DOI into Section 10, replacing
+   `[to be assigned on deposit]`: evaluation splits, cached source responses, per-run proposals
+   with verification records, and the generated reports.
+2. **Complete the declarations** in Section 11: funding, acknowledgements, and confirm the author
+   contribution statement.
+3. **Curated approvals.** `data/manual/approvals_after_cutoff.csv` is empty; FDA/EMA
    new-indication approvals after the cutoff would add the `approved` tier, the strongest
    positive label.
-3. **References.** Entries marked `[verify]` have not been opened against the published record.
-   Given the subject of the paper, none may be cited from a secondary summary.
-4. **A second model family.** One open-weight 7B model is reported. The two headline results —
-   faithfulness and accuracy decoupling, and no LLM configuration beating popularity — are the
-   ones a reviewer will most want replicated on a stronger model. A late-cutoff hosted model
-   must be probed (`probe --model …`) before its scores are compared with these.
-5. **Figures.** The draft is table-only. Candidates: a faithfulness-versus-accuracy scatter over
-   the six systems (which is the paper's argument in one picture), and the risk–coverage curve
-   implied by `coverage` against Hit@20.
+4. **Mapping audit.** Fill `data/processed/groundtruth/mapping_audit.csv` (from `audit-mapping`).
+   It asks only whether a trial's drug and condition were matched to the right entities, so it
+   needs no pharmacological judgement, and it covers the limitation reviewers press on.
+5. **Reference style.** The list is currently in a readable long form. Convert to the journal's
+   style at submission; every entry has a DOI or arXiv identifier already.
+
+No expert rating is planned. Section 6.4 sets out the three checks used in its place.
 
 ## Where the numbers come from
 

@@ -52,7 +52,9 @@ COLOURS = {
 plt.rcParams.update({
     "font.size": 9, "axes.titlesize": 10, "axes.labelsize": 9,
     "axes.spines.top": False, "axes.spines.right": False,
-    "figure.dpi": 200, "savefig.bbox": "tight",
+    # Journals ask for 600 dpi for line art (Briefings in Bioinformatics among them); 200 was
+    # below every target venue's floor.
+    "figure.dpi": 600, "savefig.bbox": "tight",
 })
 
 
