@@ -34,6 +34,8 @@ SECOND = ROOT / "runs" / "report_llama31-8b" / "summary.csv"
 SECOND_COMPARISONS = ROOT / "runs" / "report_llama31-8b" / "comparisons.csv"
 SECOND_PROBE = ROOT / "runs" / "probes" / "llama31-8b.jsonl"
 SECOND_EXTERNAL = ROOT / "runs" / "report_external_llama31-8b" / "report.json"
+# Written by `audit-mapping --score` once the sheet is filled; absent until then.
+MAPPING_SCORE = ROOT / "runs" / "mapping_audit_score.json"
 SECOND_SYSTEMS = ("llama31-8b__closed_book", "llama31-8b__rag_verify-none",
                   "llama31-8b__rag_verify-revise")
 COMPARISONS = ROOT / "runs" / "report_full" / "comparisons.csv"
@@ -276,6 +278,19 @@ def collect_claims() -> list[tuple[str, str, str]]:
                 (f"second probe {kind} flagged",
                  _fmt(sum(r["model_knows"] for r in rs) / len(rs), 3), src),
             ]
+
+    # Entity-mapping precision, once a person has judged the sampled trials. Absent until
+    # then, so these claims simply are not generated and the checker stays green.
+    if MAPPING_SCORE.exists():
+        score = json.loads(MAPPING_SCORE.read_text(encoding="utf-8"))
+        src = "mapping_audit_score.json"
+        for kind in ("drug", "disease"):
+            entry = score.get(kind) or {}
+            if entry.get("judged"):
+                claims += [
+                    (f"{kind} mapping precision", _fmt(entry["precision"], 3), src),
+                    (f"{kind} mapping judged", str(entry["judged"]), src),
+                ]
 
     rows = [json.loads(line) for line in PROBE.read_text(encoding="utf-8").splitlines() if line]
     kinds = {k: [r for r in rows if r["kind"] == k] for k in

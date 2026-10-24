@@ -67,6 +67,27 @@ but disagree on the impact factor (3.9 vs 4.33), and SCImago blocks automated ac
 5. **Reference style.** The list is currently in a readable long form. Convert to the journal's
    style at submission; every entry has a DOI or arXiv identifier already.
 
+## After the curated inputs are filled
+
+```bash
+bash scripts/refresh_after_curation.sh
+```
+
+Adding approvals changes the ground truth, so every ranking number in the manuscript is
+recomputed. No model is called — the agents' proposals are already on disk and only the scoring
+against the new positives changes — but expect `check_numbers.py` to reject a long list of
+claims afterwards. That is the checker working: each rejection is a number in `draft.md` that
+the new ground truth has moved, and the regenerated tables carry the replacement.
+
+Two passages then need writing by hand, because they do not exist yet:
+
+* **Section 9** currently says only that a drug resolves in 65% of trials and a disease in 77%.
+  Once the audit is scored, state the precision with its interval beside those coverage figures;
+  the checker enforces both numbers from `runs/mapping_audit_score.json` as soon as that file
+  appears.
+* **Section 3.2 and Table 1** should report how many `approved`-tier positives the curated file
+  contributed, and Section 7.1's tier breakdown gains a fourth row.
+
 No expert rating is planned. Section 6.4 sets out the three checks used in its place.
 
 ## Where the numbers come from
