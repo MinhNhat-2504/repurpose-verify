@@ -12,6 +12,9 @@ data/processed/
 data/cache/
 runs/
 
+# Assembled deposit package, rebuilt by scripts/make_gigadb_deposit.py
+dist/
+
 # Keep curated inputs
 !data/manual/
 

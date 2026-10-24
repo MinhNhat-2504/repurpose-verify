@@ -658,7 +658,7 @@ probe writes a per-model report for that purpose.
 | llama3.1-8b | RAG + verify-revise | 3,391,410 | 635,875 | 4 | 1,006,821 |
 | — | Popularity | 0 | 0 | 17 | 0 |
 
-**Table 7.** Cost over the 194 evaluation diseases. Hits are positives recovered in a top-20 list.
+**Table 6.** Cost over the 194 evaluation diseases. Hits are positives recovered in a top-20 list.
 
 Tool use dominates the bill: the grounded configurations read roughly 136 times as many input
 tokens as the closed-book agent, because every path enumeration and candidate screen returns to
@@ -712,7 +712,7 @@ targets for that drug. Split by the role PrimeKG assigns the edge:
 | transporter | 61 | **0.000** |
 | carrier | 54 | **0.000** |
 
-**Table 8.** ChEMBL mechanism-of-action confirmation by KG edge role, verified proposals of
+**Table 7.** ChEMBL mechanism-of-action confirmation by KG edge role, verified proposals of
 `qwen2.5-7b`'s full system (its unverified system gives 0.541 / 0.000 / 0.000 / 0.000 on 1,705
 edges).
 
@@ -755,7 +755,7 @@ published after the cutoff co-mentions the drug and the disease.
 | llama3.1-8b | RAG, no verifier | 394 | 0.089 | 0.040 | 0.030 | **+0.058** |
 | llama3.1-8b | RAG + verify-revise | 399 | 0.090 | 0.041 | 0.045 | **+0.045** |
 
-**Table 9.** Post-cutoff co-mention. The matched control pairs each proposed drug with another of
+**Table 8.** Post-cutoff co-mention. The matched control pairs each proposed drug with another of
 comparable knowledge-graph degree for the same disease. The two models agree closely, which is
 some reassurance that this measure reflects the proposals rather than the model.
 
@@ -979,13 +979,30 @@ knowledge base that cannot express the mechanism for two of every five positives
 **Other requirements.** numpy, pandas, scipy, requests, rapidfuzz, tqdm; PyTorch ≥ 2.1 for the
 knowledge-graph embedding baselines; an OpenAI-compatible or Anthropic endpoint for the agent
 **Licence.** MIT
-**RRID / archive.** `[to be assigned on deposit]`
+**RRID / archive.** `[GigaDB DOI to be assigned on acceptance]`
+
+The data supporting the results of this article are available in the GigaDB repository
+[15]: `[GigaDB DOI to be assigned on acceptance]`.
 
 The repository builds the knowledge graph and the time-split ground truth from public sources and
 caches every external response, so a reported run can be re-scored, or re-executed offline, from
-the archived evidence. The evaluation splits, the cached source responses, every run's proposals
-with their full verification records, and the generated reports will be deposited in the
-*GigaScience* repository GigaDB, and the DOI inserted here `[to be assigned on deposit]`.
+the archived evidence. The deposited dataset carries the parts of that evidence that are ours to
+release: the frozen evaluation split and the curated files of Table 9, the derived ground truth
+(`positives.csv`, `known_pairs.csv.gz`, the eval-disease table and the build report), every run's
+proposals with their full verification records and token accounting, the leakage-probe responses,
+and the generated reports and figures. Those 24 GPU-hours of model output are the part of this
+work that cannot be regenerated: the agents are sampling, and Section 9 notes that the same model
+and prompt returned different proposals on a second pass.
+
+What the deposit does *not* duplicate is the third-party data behind it. GigaDB releases its
+datasets under a CC0 waiver, which we cannot apply to data we did not create: ChEMBL is
+distributed under CC BY-SA, PubMed records carry publisher copyright in their abstracts, and
+PrimeKG, Mondo and HGNC each come with their own terms. Those sources are identified instead by
+version and access date in the table below, and `python -m repurpose_verify download all`
+refetches them into the same cache layout. The ClinicalTrials.gov and Drugs@FDA responses are
+works of the United States government and are included, because they are the evidence for every
+positive in the ground truth and the registry is revised in place — a trial record refetched in
+2027 is not the record that produced these labels.
 
 A `reverify` command re-scores saved proposals with an updated verifier without re-running any
 model, which is how the revised taxonomy in Section 4.3 and the grounding correction of
@@ -1006,6 +1023,9 @@ derived data under `data/processed/` is regenerable from them and is not:
 | `data/manual/approvals_candidates.csv` | the worksheet those were judged from: every candidate approval, its letter quote, the proposed ontology term and the link to the FDA record |
 | `data/manual/mapping_audit.csv` | the 200-trial entity-mapping audit with its per-row judgements (Section 3.2) |
 | `scripts/measure_grounding_correction.py` | regenerates every positive added or removed by the grounding correction, as a CSV and the counts quoted in Section 7.7 |
+
+**Table 9.** Curated inputs released with the manuscript. Each holds a human judgement or a
+frozen choice that the pipeline cannot re-derive.
 
 ### Source versions
 
@@ -1088,6 +1108,9 @@ sheet is released so that it can be checked.
 14. Wishart DS, Feunang YD, Guo AC, Lo EJ, et al. DrugBank 5.0: a major update to the DrugBank
     database for 2018. *Nucleic Acids Research* 2018;46(D1):D1074–D1082.
     doi:10.1093/nar/gkx1037
+15. Trinh NNM, Nguyen LTM. Supporting data for "Can an LLM agent justify what it recommends? A
+    mechanism-verified, time-split benchmark for drug repurposing". *GigaScience Database* 2026.
+    `[DOI to be assigned on acceptance]`
 
 > **Reference audit (2026-10-21).** Every entry above was resolved against an authoritative
 > record — Crossref, PubMed, arXiv, OpenAlex, the NIPS 2013 proceedings index or the publisher
@@ -1146,6 +1169,7 @@ python -m repurpose_verify evaluate --runs runs/qwen25-7b__* runs/llama31-8b__* 
 python scripts/measure_grounding_correction.py   # the Section 7.7 difference
 python paper/check_numbers.py
 python paper/make_figures.py
+python scripts/make_gigadb_deposit.py            # assemble the deposited dataset
 ```
 
 After either curated file is edited, `bash scripts/refresh_after_curation.sh` redoes everything
