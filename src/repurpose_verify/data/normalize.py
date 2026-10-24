@@ -8,6 +8,8 @@ import unicodedata
 _PUNCT = re.compile(r"[^a-z0-9]+")
 _DOSE = re.compile(r"\b\d+(\.\d+)?\s*(mg|mcg|ug|g|ml|iu|units?|%|mg/kg|mg/m2)\b")
 _PAREN = re.compile(r"\(([^)]*)\)|\[([^\]]*)\]")
+# Parenthetical fragments this short are abbreviations, not names.
+MIN_ABBREVIATION_LEN = 4
 
 SALT_WORDS = {
     "hydrochloride", "dihydrochloride", "hcl", "sodium", "potassium", "calcium", "magnesium",
@@ -42,6 +44,12 @@ def uninvert(text: str) -> str:
     return text
 
 
+def is_acronym(text: str) -> bool:
+    """Whether a bracketed fragment reads as an acronym rather than a qualifier."""
+    letters = [c for c in text if c.isalpha()]
+    return bool(letters) and sum(c.isupper() for c in letters) * 2 > len(letters)
+
+
 def name_variants(text: str) -> list[str]:
     """Normalised surface forms of a generic entity mention (order = preference)."""
     out: list[str] = []
@@ -51,8 +59,17 @@ def name_variants(text: str) -> list[str]:
         if n and n not in out:
             out.append(n)
     for m in _PAREN.finditer(raw):
-        inner = norm(m.group(1) or m.group(2) or "")
-        if inner and inner not in out:
+        group = m.group(1) or m.group(2) or ""
+        inner = norm(group)
+        # A parenthetical is only worth indexing on its own when it is an acronym of the name
+        # beside it. Everything else in brackets is a qualifier, and indexing qualifiers
+        # mis-grounds mentions wholesale: MONDO tags labels with "(clinical)", "(disease)" and
+        # "(acute)", which made the bare word "clinical" resolve to extramedullary plasmacytoma;
+        # chemical names carry "(18F)", "(III)" and "(3R)", which made every PET tracer resolve
+        # to Fludeoxyglucose; and short acronyms collide across specialties, so "atopic
+        # dermatitis (AD)" resolved to Alzheimer disease. An acronym is mostly capitals and
+        # long enough to be specific - "NSCLC", "HFpEF" - while a qualifier is not.
+        if len(inner) > MIN_ABBREVIATION_LEN and is_acronym(group) and inner not in out:
             out.append(inner)
     # Symbols are written with and without separators: COX-2 / COX 2 / COX2, IL-6 / IL6.
     # Only short mentions are squashed, so multi-word disease names are left alone.

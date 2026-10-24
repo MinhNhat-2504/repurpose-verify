@@ -28,6 +28,15 @@ DRUG, DISEASE, GENE, PATHWAY = "drug", "disease", "gene/protein", "pathway"
 DRUG_DISEASE_RELS = frozenset({"indication", "contraindication", "off-label use"})
 KNOWN_USE_RELS = frozenset({"indication", "off-label use"})
 
+# Category nouns an ontology uses as the label of a grouping term. Never indexed as a lookup
+# key: on their own they name a class, not an entity.
+CATEGORY_NOUNS = frozenset({
+    "disease", "diseases", "disorder", "disorders", "syndrome", "syndromes", "condition",
+    "conditions", "illness", "sign", "signs", "symptom", "symptoms", "abnormality", "phenotype",
+    "drug", "drugs", "medication", "medications", "compound", "compounds", "agent", "agents",
+    "gene", "genes", "protein", "proteins", "pathway", "pathways", "clinical", "acute", "chronic",
+})
+
 PRIMEKG_COLS = ["relation", "display_relation", "x_index", "x_id", "x_type", "x_name",
                 "x_source", "y_index", "y_id", "y_type", "y_name", "y_source"]
 NODE_COLS = {"node_index": "idx", "node_id": "id", "node_type": "type", "node_name": "name",
@@ -293,6 +302,13 @@ class KnowledgeGraph:
             for syn in self._synonyms.get(i, []):
                 variants += name_variants(syn)
             for v in dict.fromkeys(variants):
+                # MONDO gives its grouping terms the bare category noun as a synonym, so
+                # "disease" is a listed synonym of the root term and "disorder" of another.
+                # Indexing those keys makes a mention of the word alone resolve to a specific
+                # node - "disease" reached schizophrenia - and nothing is lost by refusing them:
+                # a category noun on its own never identifies an entity.
+                if v in CATEGORY_NOUNS:
+                    continue
                 name_index[ntype][v].append(i)
             for key in _source_ids(sid, source):
                 id_index[key].append(i)
@@ -324,11 +340,17 @@ class KnowledgeGraph:
     def _fuzzy_candidates(self, node_type: str, query: str) -> list[str]:
         index = self._trigram_index(node_type)
         counts: Counter[str] = Counter()
-        for tri in self._trigrams_of(query):
+        for tri in sorted(self._trigrams_of(query)):
             names = index.get(tri)
             if names and len(names) <= self.MAX_POSTINGS:
                 counts.update(names)
-        return [name for name, _ in counts.most_common(self.FUZZY_CANDIDATES)]
+        # Ties on shared-trigram count decide which names reach the scorer at all, and there are
+        # many of them. Counter.most_common breaks a tie by insertion order, which follows the
+        # iteration order of a set of trigrams and so differs between processes: two builds of
+        # the ground truth from identical inputs disagreed on three positives. The name is the
+        # tie-breaker instead, which makes the candidate pool a function of the query alone.
+        ranked = sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))
+        return [name for name, _ in ranked[:self.FUZZY_CANDIDATES]]
 
     def lookup(self, mention: str, node_type: str | None = None, fuzzy_threshold: float = 0,
                limit: int = 10) -> list[int]:
@@ -387,8 +409,9 @@ class KnowledgeGraph:
         # "COX2" must not outrank a node actually called COX2.
         wanted = set(drug_variants(mention) if node_type == DRUG else name_variants(mention))
         primary = [i for i in hits if norm(str(self.names[i])) in wanted]
-        # Otherwise prefer the most connected node.
-        return max(primary or hits, key=self.degree)
+        # Otherwise prefer the most connected node, and settle a tie on the node index rather
+        # than on the order the candidates happened to arrive in.
+        return max(primary or hits, key=lambda i: (self.degree(i), -int(i)))
 
     def search(self, query: str, node_type: str | None = None, limit: int = 10) -> list[int]:
         """Lenient search for agent tools: exact, then substring, then fuzzy."""
