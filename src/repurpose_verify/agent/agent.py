@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import re
 import threading
 import time
@@ -262,6 +263,76 @@ class ServerUnreachable(RuntimeError):
     """The model server stopped answering; the run must not carry on manufacturing records."""
 
 
+class RunLocked(RuntimeError):
+    """Another process is already writing this run."""
+
+
+class _RunLock:
+    """Exclusive lock on a run directory, so two processes cannot append to one file.
+
+    Two copies of the driver script were once left running at the same time; both computed a
+    to-do list from the same file, and the overlap was written twice. Duplicated records are
+    worse than lost ones, because every metric then counts those diseases more than once.
+    A lock holding the owning pid turns that into an immediate, explicable failure.
+    """
+
+    def __init__(self, path: Path, stale_after: float = 900.0):
+        self.path = Path(path)
+        self.stale_after = stale_after
+
+    def _held_by_other(self) -> bool:
+        """Is a live run holding this lock?
+
+        Liveness is a heartbeat, not a pid probe. The obvious check, ``os.kill(pid, 0)``, is
+        safe on POSIX but not here: CPython on Windows implements os.kill for any signal other
+        than the console events as OpenProcess + TerminateProcess, so asking whether the other
+        run is alive would kill it. The holder re-touches the lock after every disease instead,
+        and a lock left untouched for longer than a few diseases is treated as abandoned.
+        """
+        try:
+            owner = json.loads(self.path.read_text(encoding="utf-8"))
+            if int(owner["pid"]) == os.getpid():
+                return False
+            return (time.time() - self.path.stat().st_mtime) < self.stale_after
+        except (OSError, ValueError, KeyError, json.JSONDecodeError):
+            return False
+
+    def __enter__(self) -> "_RunLock":
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        if self.path.exists() and self._held_by_other():
+            raise RunLocked(
+                f"{self.path.parent.name} is already being written by another process "
+                f"({self.path.read_text(encoding='utf-8').strip()}). Stop it, or use a "
+                f"different --run-name; two writers produce duplicate records.")
+        self.path.write_text(json.dumps({"pid": os.getpid(), "started": time.time()}),
+                             encoding="utf-8")
+        return self
+
+    def touch(self) -> None:
+        try:
+            self.path.touch()
+        except OSError:
+            pass
+
+    def __exit__(self, *exc: object) -> None:
+        try:
+            if self.path.exists() and json.loads(
+                    self.path.read_text(encoding="utf-8")).get("pid") == os.getpid():
+                self.path.unlink()
+        except (OSError, json.JSONDecodeError):
+            pass
+
+
+def _dedupe_records(rows: list[dict]) -> list[dict]:
+    """Keep one record per disease, preferring the last clean one."""
+    best: dict[int, dict] = {}
+    for r in rows:
+        key = r["disease_idx"]
+        if key not in best or not _is_infrastructure_failure(r):
+            best[key] = r
+    return [best[k] for k in sorted(best)]
+
+
 # Failures that mean the server is gone rather than the model behaving badly. A record produced
 # under one of these is not a result, so it is neither written nor counted as done - otherwise a
 # crashed server quietly fills the file with empty rankings that resume will never revisit.
@@ -282,15 +353,24 @@ def run_agent(agent_factory: Callable[[], RepurposingAgent], disease_ids: list[i
     """
     out_path = Path(out_path)
     out_path.parent.mkdir(parents=True, exist_ok=True)
+    run_lock = _RunLock(out_path.parent / ".run.lock")
+    run_lock.__enter__()
     done, retry = set(), set()
     if out_path.exists():
-        for r in read_jsonl(out_path):
+        rows = list(read_jsonl(out_path))
+        deduped = _dedupe_records(rows)
+        if len(deduped) != len(rows):
+            log.warning("%d duplicate records found and collapsed to one per disease",
+                        len(rows) - len(deduped))
+            write_jsonl(out_path, deduped)
+            rows = deduped
+        for r in rows:
             (retry if _is_infrastructure_failure(r) else done).add(r["disease_idx"])
-    retry -= done
-    if retry:
-        log.warning("%d stored records failed against the server and will be re-run", len(retry))
-        rows = [r for r in read_jsonl(out_path) if r["disease_idx"] not in retry]
-        write_jsonl(out_path, rows)
+        retry -= done
+        if retry:
+            log.warning("%d stored records failed against the server and will be re-run",
+                        len(retry))
+            write_jsonl(out_path, [r for r in rows if r["disease_idx"] not in retry])
     todo = [d for d in disease_ids if d not in done]
     if meta:
         (out_path.parent / "meta.json").write_text(json.dumps(meta, indent=2, default=str),
@@ -324,12 +404,17 @@ def run_agent(agent_factory: Callable[[], RepurposingAgent], disease_ids: list[i
 
     from tqdm import tqdm
 
-    if workers <= 1:
-        for d in tqdm(todo, desc="diseases"):
-            work(d)
-    else:
-        with ThreadPoolExecutor(workers) as pool:
-            futures = [pool.submit(work, d) for d in todo]
-            for f in tqdm(as_completed(futures), total=len(futures), desc="diseases"):
-                f.result()
+    try:
+        if workers <= 1:
+            for d in tqdm(todo, desc="diseases"):
+                work(d)
+                run_lock.touch()
+        else:
+            with ThreadPoolExecutor(workers) as pool:
+                futures = [pool.submit(work, d) for d in todo]
+                for f in tqdm(as_completed(futures), total=len(futures), desc="diseases"):
+                    f.result()
+                    run_lock.touch()
+    finally:
+        run_lock.__exit__()
     return out_path

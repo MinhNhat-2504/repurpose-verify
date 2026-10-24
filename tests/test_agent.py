@@ -1,4 +1,5 @@
 import json
+import sys
 from datetime import date
 
 import pytest
@@ -6,7 +7,7 @@ import pytest
 from repurpose_verify.agent.agent import AgentSettings, RepurposingAgent
 from repurpose_verify.agent.llm import AssistantTurn, MockClient, ToolCall
 from repurpose_verify.agent.tools import Toolbox
-from repurpose_verify.utils import extract_json
+from repurpose_verify.utils import extract_json, read_jsonl
 from repurpose_verify.verify.verifier import MechanismVerifier
 
 CUTOFF = date(2021, 12, 31)
@@ -156,6 +157,58 @@ def test_server_failures_are_not_results(kg, tmp_path):
     assert set(rows) == {9, 10}
     assert rows[9]["ranked"] == [{"drug_idx": 0, "drug": "Metformin", "verified": True}]
     assert rows[10]["ranked"] == [{"drug_idx": 2}]      # the clean record was left alone
+
+
+def test_two_writers_are_refused(kg, tmp_path):
+    """Two processes appending to one run produce duplicates, which inflate every metric."""
+    import os
+    import time
+
+    from repurpose_verify.agent.agent import RunLocked, _RunLock, run_agent
+
+    out = tmp_path / "run" / "rankings.jsonl"
+    out.parent.mkdir(parents=True)
+    held = _RunLock(out.parent / ".run.lock")
+    held.path.write_text(json.dumps({"pid": os.getpid() + 0}), encoding="utf-8")
+    # A lock naming *this* pid is our own and must not block us.
+    factory = lambda: make_agent(kg, lambda *a: call("submit_proposals", proposals=[GOOD]),  # noqa: E731
+                                 mode="rag", verifier="filter")
+    run_agent(factory, [9], out, workers=1)
+
+    # A lock another process touched recently does block, with the owner named.
+    held.path.write_text(json.dumps({"pid": os.getpid() + 1}), encoding="utf-8")
+    with pytest.raises(RunLocked, match="already being written"):
+        run_agent(factory, [10], out, workers=1)
+
+    # A lock nobody has touched for longer than the staleness window is abandoned, so a
+    # crashed run does not block the machine forever.
+    old = time.time() - 4000
+    os.utime(held.path, (old, old))
+    run_agent(factory, [10], out, workers=1)
+    assert {r["disease_idx"] for r in read_jsonl(out)} == {9, 10}
+    assert not held.path.exists(), "the lock is released when the run finishes"
+
+
+def test_duplicate_records_are_collapsed(kg, tmp_path):
+    from repurpose_verify.agent.agent import run_agent
+    from repurpose_verify.utils import write_jsonl
+
+    out = tmp_path / "run" / "rankings.jsonl"
+    write_jsonl(out, [
+        {"disease_idx": 9, "ranked": [], "proposals": [], "trace": {"errors": []}},
+        {"disease_idx": 9, "ranked": [{"drug_idx": 1}], "proposals": [], "trace": {"errors": []}},
+        {"disease_idx": 10, "ranked": [], "proposals": [],
+         "trace": {"errors": ["APIConnectionError: x"]}},
+        {"disease_idx": 10, "ranked": [{"drug_idx": 2}], "proposals": [], "trace": {"errors": []}},
+    ])
+    run_agent(lambda: make_agent(kg, lambda *a: call("submit_proposals", proposals=[GOOD]),
+                                 mode="rag", verifier="filter"), [9, 10], out, workers=1)
+    rows = list(read_jsonl(out))
+    assert len(rows) == 2, "one record per disease"
+    by = {r["disease_idx"]: r for r in rows}
+    # The clean copy wins over the failed one, and neither disease is re-run.
+    assert by[9]["ranked"] == [{"drug_idx": 1}]
+    assert by[10]["ranked"] == [{"drug_idx": 2}]
 
 
 def test_extract_json():
