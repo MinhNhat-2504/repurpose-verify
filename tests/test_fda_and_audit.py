@@ -111,6 +111,41 @@ def test_worksheet_is_ready_to_fill(tmp_path, kg):
                            encoding="utf-8-sig")) == 2
 
 
+def test_extract_indication_from_letter_text():
+    """The operative clause names the indication; the boilerplate around it varies."""
+    from repurpose_verify.data.fda import extract_indication
+
+    real = ("Please refer to your Supplemental New Drug Application (sNDA) dated ... "
+            "RINVOQ (upadacitinib) extended-release tablets. This Prior Approval supplemental "
+            "new drug application provides for treatment of adults with giant cell arteritis. "
+            "APPROVAL & LABELING We have completed our review of this application, as amended.")
+    assert extract_indication(real) == "treatment of adults with giant cell arteritis"
+
+    wrapped = ("This supplemental new drug application provides for the addition of a new "
+               "indication for the treatment of adult patients with moderately to severely "
+               "active ulcerative colitis. CONTENT OF LABELING ...")
+    got = extract_indication(wrapped)
+    assert got is not None and "ulcerative colitis" in got
+
+    # A letter that never says what it provides for yields nothing rather than a guess.
+    assert extract_indication("We have completed our review of this application.") is None
+
+
+def test_worksheet_carries_the_letter_quote(tmp_path, kg):
+    from repurpose_verify.data.fda import find_new_indication_approvals, write_candidates
+
+    found = find_new_indication_approvals(_archive(tmp_path / "daf.zip"), kg, CUTOFF, END)
+    letters = {("001", "5"): ("treatment of adults with colorectal cancer",
+                              "https://example.invalid/letter.pdf")}
+    out = write_candidates(found, tmp_path / "c.csv", letters=letters)
+    df = pd.read_csv(out, encoding="utf-8-sig")
+    row = df.iloc[0]
+    assert row.letter_indication == "treatment of adults with colorectal cancer"
+    assert row.letter_link == "https://example.invalid/letter.pdf"
+    # The quote is evidence, not a decision: the disease column stays empty.
+    assert pd.isna(row.disease)
+
+
 def test_score_mapping_audit(tmp_path):
     path = tmp_path / "audit.csv"
     pd.DataFrame([

@@ -81,9 +81,24 @@ def cmd_fda_approvals(ctx: Context, args) -> None:
     download(BULK_URL, archive)
     cands = find_new_indication_approvals(archive, ctx.kg, cfg.cutoff, cfg.eval_end,
                                           cfg["groundtruth"].get("fuzzy_threshold", 0))
+    if args.limit:
+        cands = [c for c in cands if c.kg_drug is not None][:args.limit]
+    letters: dict[tuple[str, str], tuple[str, str]] = {}
+    if args.with_letters:
+        from .data.fda import extract_indication, fetch_letter
+        from tqdm import tqdm
+
+        cache = cfg.cache_dir / "fda_letters"
+        todo = [c for c in cands if c.kg_drug is not None or args.all_drugs]
+        for c in tqdm(todo, desc="approval letters"):
+            text, url = fetch_letter(c.appl_no, c.submission_no, c.approval_date.year, cache)
+            if text:
+                letters[(c.appl_no, c.submission_no)] = (extract_indication(text) or "", url)
+        got = sum(1 for v in letters.values() if v[0])
+        log.info("read %d letters, %d named an indication", len(letters), got)
     out = Path(args.out) if args.out else cfg.path("groundtruth", "manual_approvals").with_name(
         "approvals_candidates.csv")
-    write_candidates(cands, out, matched_only=not args.all_drugs)
+    write_candidates(cands, out, matched_only=not args.all_drugs, letters=letters)
     matched = sum(c.kg_drug is not None for c in cands)
     print(f"{len(cands)} new-indication approvals between {cfg.cutoff} and {cfg.eval_end};"
           f" {matched} matched a drug in the graph")
@@ -382,6 +397,9 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--out")
     s.add_argument("--all-drugs", action="store_true",
                    help="include approvals whose drug does not match the graph")
+    s.add_argument("--with-letters", action="store_true",
+                   help="download each approval letter and quote the indication it grants")
+    s.add_argument("--limit", type=int, help="first N matched approvals only")
     s.set_defaults(fn=cmd_fda_approvals)
 
     s = sub.add_parser("audit-mapping", help="sample trials to hand-check entity mapping")
