@@ -26,6 +26,22 @@ mkdir -p "$LOG"
 stamp() { date '+%Y-%m-%d %H:%M:%S'; }
 status() { echo "[$(stamp)] $*" | tee -a "$LOG/status.txt"; }
 
+# One driver per model. Two copies of this script were once left running at the same time and
+# wrote the same run file, duplicating 69 of 200 diseases while halving throughput, because
+# each was waiting on a GPU the other was using. Killing the wrapper around the script does not
+# kill the script, so the guard belongs here rather than in whatever launched it.
+DRIVER_LOCK="$LOG/${MODEL}.driver.lock"
+if [ -e "$DRIVER_LOCK" ]; then
+  other=$(cat "$DRIVER_LOCK" 2>/dev/null)
+  if kill -0 "$other" 2>/dev/null; then
+    status "another driver for $MODEL is already running (pid $other) - refusing to start"
+    exit 1
+  fi
+  status "removing stale driver lock from pid $other"
+fi
+echo $$ > "$DRIVER_LOCK"
+trap 'rm -f "$DRIVER_LOCK"' EXIT
+
 run_system() {           # run_system <run-name> <extra args...>
   local name="$1"; shift
   local target done_count
