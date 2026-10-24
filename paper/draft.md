@@ -23,7 +23,7 @@ Linh Nguyen Thi My¹ (ORCID 0000-0003-3990-312X)
 > and none of the conclusions rests on one.
 >
 > An earlier version of this draft reported a 12-disease pilot in which verification cut
-> fabricated edges 7-fold. At full scale the reduction is 2.6-fold (Section 7.3). The pilot
+> fabricated edges 7-fold. At full scale the reduction is 2.2-fold (Section 7.3). The pilot
 > overestimated the effect by roughly three times, and a claim about citation behaviour drawn
 > from it did not survive either. Both corrections are recorded in Section 7.3 rather than
 > quietly replaced, because the discrepancy is itself a result about pilot-scale faithfulness
@@ -46,36 +46,36 @@ accepted as written or graded by another LLM.
 may query is frozen at 2021-12-31: a knowledge graph snapshot of that period and PubMed
 restricted by publication date. Agents are then scored on drug–disease pairs whose first phase 2
 or later trial began after the cutoff. From 172,939 pre-cutoff and 34,595 post-cutoff trials we
-obtain 2,776 pairs that were unknown at the cutoff by three independent criteria; 565 of them
-fall in a 200-disease evaluation set, and none has a drug–disease edge in the graph. Each
+obtain 2,731 pairs that were unknown at the cutoff by three independent criteria; 546 of them
+fall in a frozen 194-disease evaluation set, and none has a drug–disease edge in the graph. Each
 proposal must carry a mechanism path, and a verifier checks every edge against graph relations
 or a cited pre-cutoff abstract. We report *fabricated* edges (both endpoints real, nothing links
 them) apart from *unresolvable* ones (the endpoint names no single entity), because merging them
 overstates fabrication threefold.
 
-Across 200 diseases and 14,483 proposals from two open-weight models of the same size class,
+Across those diseases and 14,065 proposals from two open-weight models of the same size class,
 grounding and verification act strongly on faithfulness, in opposite directions depending on the
-model, and not at all on accuracy. With `qwen2.5-7b`, a closed-book agent fabricates 21.1% of its
-mechanism edges and leaves 69.5% unresolvable; graph tools take fabrication to 4.6% and
+model, and not at all on accuracy. With `qwen2.5-7b`, a closed-book agent fabricates 20.8% of its
+mechanism edges and leaves 70.0% unresolvable; graph tools take fabrication to 3.9% and
 edge-level verification with one revision round to 1.8%. With `llama3.1-8b` the same tools take
-fabrication the other way, from 0.289 closed book to 0.944, because that model reuses identifiers
+fabrication the other way, from 0.290 closed book to 0.942, because that model reuses identifiers
 it has seen instead of querying for a path — naming other *drugs* as targets in 688 of its edges.
 Grounding did not make either model truthful; it moved their errors from unresolvable prose into
 checkable claims, which one model then got right and the other wrong. Ranking is untouched by
-verification in both (ΔMRR 0.0004, *p* = 0.70 and 0.60), the closed-book configuration ranks at
+verification in both (ΔMRR 0.0004, *p* = 0.72 and 0.64), the closed-book configuration ranks at
 least as well as the grounded ones in both, and **no LLM configuration of either model matches a
-popularity baseline** (MRR 0.029 against 0.006–0.020; *p* = 0.014 and 0.002). A weight-level
+popularity baseline** (MRR 0.030 against 0.006–0.021; *p* = 0.012 and < 0.001). A weight-level
 leakage probe with positive and negative controls finds no post-cutoff signal above its own
 false-positive floor for either model.
 
 **Conclusions.** Faithfulness and accuracy are decoupled in current repurposing agents: in both
 models the least verifiable configuration ranks best, and neither beats ranking drugs by how many
-indications they already have. Verification removes three fifths of one model's fabricated claims
-for 9% more input tokens and no measurable loss in ranking, but it buys checkability, not
+indications they already have. Verification removes over half of one model's fabricated claims
+for 8% more input tokens and no measurable loss in ranking, but it buys checkability, not
 discovery — and what grounding does to a model's fabrication rate is a property of the model, so
 single-model evidence about it is unsafe. Reporting either quantity alone, or either model alone,
 would have supported a conclusion the rest of the data contradicts. We also quantify a limit of
-mechanism-verified evaluation itself: only 59.3% of our positives admit any mechanism path in the
+mechanism-verified evaluation itself: only 61.4% of our positives admit any mechanism path in the
 graph, which caps what a verified-only system can recover regardless of the model.
 
 **Availability.** Code, splits, cached evidence and reports: https://github.com/MinhNhat-2504/repurpose-verify
@@ -106,7 +106,7 @@ models generalise considerably worse than their reported figures suggest [3].
 **A fluent mechanism is not a verified one.** When an agent explains that drug D hits target T
 which drives disease S, the explanation is usually either taken at face value or scored by
 another language model. Neither establishes that the edges exist. The failure is not
-hypothetical: across 200 diseases an agent with a literature-search tool available called it
+hypothetical: across the 194 evaluation diseases an agent with a literature-search tool available called it
 once, and every one of the twenty PubMed identifiers it volunteered was invented
 (Section 7.3).
 
@@ -121,15 +121,15 @@ We address both by construction.
 
 Our contributions are:
 
-* A leakage-audited, time-split ground truth of 2,776 novel drug–disease pairs, with the audit
+* A leakage-audited, time-split ground truth of 2,731 novel drug–disease pairs, with the audit
   reported rather than asserted (Section 7.1).
 * A mechanism verifier whose evidence taxonomy distinguishes a false claim from an uncheckable
   one, and the demonstration that conflating them inflates measured fabrication threefold
   (Sections 4, 7.3).
-* A measurement of what verification buys and what it does not: fabricated edges fall 2.6-fold
+* A measurement of what verification buys and what it does not: fabricated edges fall 2.2-fold
   when rejected proposals are returned for one revision round, while ranking does not move
-  (*p* = 0.70) and no configuration reaches a popularity baseline (Section 7.3).
-* A *verifiable ceiling*: only 59.3% of our positives admit any mechanism path, a bound on
+  (*p* = 0.72) and no configuration reaches a popularity baseline (Section 7.3).
+* A *verifiable ceiling*: only 61.4% of our positives admit any mechanism path, a bound on
   mechanism-verified evaluation that is a property of the knowledge base, not of the model
   (Section 7.1).
 * A weight-level leakage probe with positive and negative controls, so that "no leakage found"
@@ -188,22 +188,32 @@ phase) and 34,595 beginning afterwards with a maximum phase of 2, 3 or 4.
 Interventions are mapped to graph drugs after stripping doses, salts and formulations and
 splitting combination strings; generic arms (placebo, standard of care, saline) are discarded.
 Conditions are mapped through the trial record's MeSH identifiers to MONDO cross-references,
-falling back to name matching. A drug resolves in 64.9% of trials and a disease in 77.3%; the
+falling back to name matching. A drug resolves in 64.2% of trials and a disease in 77.2%; the
 unmatched remainder is dominated by novel compounds absent from DrugBank and by conditions with
 no MONDO equivalent.
 
 Coverage says nothing about whether the mappings that *are* made are right, so we audited them.
 Two hundred post-cutoff trials were sampled and each mapped entity judged against the trial
 record: a row counts as correct when every entity the mapper produced corresponds to something
-the trial actually studies. Precision is **0.942** (95% CI 0.894–0.981) over the 104 sampled
-trials carrying a drug mapping and **0.890** (0.838–0.935) over the 154 carrying a disease
+the trial actually studies. Precision is **0.990** (95% CI 0.970–1.000) over the 100 sampled
+trials carrying a drug mapping and **0.889** (0.837–0.935) over the 153 carrying a disease
 mapping. Trials where nothing mapped are not scored here: that is a recall miss, already
 reported as coverage, and counting it again as a precision error would charge the same gap
 twice.
 
-The errors fall into three kinds, all visible in the released sheet. Fuzzy name matching
-occasionally latches onto a fragment of a chemical name — the IUPAC expansion of navtemadlin
-contains a substring that matched `(S)-Warfarin`. Generic MeSH headings such as *Diagnosis* or
+This audit was run twice: once on the mapper as first written, and again after the grounding
+corrections of Section 7.7, on the same 200 sampled trials under the same judgements. The
+corrections raised drug precision from 0.942 to 0.990 by removing five of the six drug errors
+the first pass had found, and left disease precision unchanged at 0.89. They cost four of the
+104 drug mappings and one of the 154 disease mappings, which is the recall side of the same
+change: the lost disease row is a trial whose condition read "Coronary Arterial Disease (CAD)",
+which the graph matched only through the acronym because its own label is "coronary artery
+disease".
+
+The errors that remain fall into three kinds, all visible in the released sheet. Fuzzy name
+matching occasionally latches onto a fragment of a chemical name — the IUPAC expansion of
+navtemadlin contains a substring that matched `(S)-Warfarin`, an error the corrections removed.
+Generic MeSH headings such as *Diagnosis* or
 *Disease* resolve to the ontology's root, giving a meaningless `disease or disorder`. And a MeSH
 heading auto-assigned to a trial is not always a condition under study: a trial of
 chemotherapy-induced neuropathic pain carries the heading *Neoplasms*, which maps to a disease
@@ -217,7 +227,7 @@ same window, **and** the pair was unknown at the cutoff under all three of the f
 2. no trial of the pair, in any phase, starting on or before the cutoff;
 3. not present in the curated approvals list before the cutoff.
 
-Criterion 2 is what distinguishes this split from one built on curated indications alone: 68,628
+Criterion 2 is what distinguishes this split from one built on curated indications alone: 66,126
 pairs were already in trials before the cutoff without appearing as graph indications, and
 counting them as novel would reward retrieval. Only trials testing exactly one graph drug
 contribute, so that combination arms do not create spurious pairs.
@@ -226,23 +236,24 @@ contribute, so that combination arms do not create spurious pairs.
 
 | Channel | Control | Audit |
 |---|---|---|
-| The graph contains the answer | Criterion 1 above; held-out pairs' drug–disease edges are additionally removed before any run | 0 of 2,776 positives have such an edge; 27 contraindication edges were removed |
-| The pair was already in trials | Criterion 2, any phase | 68,628 pairs excluded |
+| The graph contains the answer | Criterion 1 above; held-out pairs' drug–disease edges are additionally removed before any run | 0 of 2,731 positives have such an edge; 27 contraindication edges were removed |
+| The pair was already in trials | Criterion 2, any phase | 66,126 pairs excluded |
 | Literature after the cutoff | PubMed queried with `datetype=pdat&maxdate=2021/12/31`; every fetched record re-checked; later citations counted invalid | Invalid-citation rate reported per system |
 | Model weights | Open-weight models with documented cutoffs; closed-book probe with controls; masked re-scoring | Section 7.4 |
 | Verifier evidence | Open Targets (a live release containing post-cutoff evidence) disabled by default; reported separately when enabled | Off in all reported runs |
 
 ### 3.4 Evaluation diseases and the verifiable ceiling
 
-Of 1,149 diseases carrying at least one positive, 424 have no `disease_protein` edge at all. No
+Of 1,143 diseases carrying at least one positive, 417 have no `disease_protein` edge at all. No
 mechanism path can terminate at such a disease, so every proposal for it is unverifiable for a
 reason that has nothing to do with the model. We therefore require at least one associated gene,
-leaving 725 diseases, and sample 200 (seed 13) holding 565 positives.
+leaving 726 diseases, from which 200 were drawn (seed 13) and frozen as the evaluation split; 194
+of them hold a positive under the corrected grounding, and those 194 hold 546 positives.
 
-Within those 565 positives, only **335 (59.3%)** are *mechanism-reachable*: the graph admits at
-least one drug → gene (→ gene | → pathway → gene) → disease path of at most four edges. For 79
+Within those 546 positives, only **335 (61.4%)** are *mechanism-reachable*: the graph admits at
+least one drug → gene (→ gene | → pathway → gene) → disease path of at most four edges. For 70
 positives the drug has no recorded target at all. A system that reports only verified proposals
-therefore cannot exceed 0.59 recall on this set. We release `mechanism_reachable` and `n_targets`
+therefore cannot exceed 0.61 recall on this set. We release `mechanism_reachable` and `n_targets`
 per pair so that the ceiling can be recomputed for any stratum, and we regard reporting it as
 part of reporting the benchmark: without it, a verified-only system's recall is uninterpretable.
 
@@ -413,31 +424,42 @@ released proposals, each of which carries its full verification record.
 |---|---|
 | Graph | 129,375 nodes; 4,050,249 edges; 7,957 drugs; 17,080 diseases |
 | Trials read | 172,939 pre-cutoff; 34,595 post-cutoff phase 2+ |
-| Pairs known at the cutoff | 11,831 graph indications/off-label; 68,628 pre-cutoff trial pairs |
-| Post-cutoff pairs found | 6,556 |
-| Novel positives | **2,776** (phase 2: 1,602; phase 3: 626; phase 4: 548) |
-| Diseases with a positive | 1,149 → 725 with ≥1 associated gene → **200 sampled** (565 positives) |
+| Pairs known at the cutoff | 11,831 graph indications/off-label; 66,126 pre-cutoff trial pairs |
+| Post-cutoff pairs found | 6,500 |
+| Novel positives | **2,731** (phase 2: 1,570; phase 3: 601; phase 4: 536; approved: 24) |
+| Diseases with a positive | 1,143 → 726 with ≥1 associated gene → **200 drawn**, of which 194 retain a positive (546 positives) |
 | Leakage audit | **0** positives carry a drug–disease edge in the snapshot |
-| Mechanism-reachable positives | **335 / 565 (59.3%)**; 79 positives' drugs have no recorded target |
+| Mechanism-reachable positives | **335 / 546 (61.4%)**; 70 positives' drugs have no recorded target |
 
 **Table 1.** Benchmark composition at cutoff 2021-12-31.
 
-Two features deserve emphasis. First, 58% of the post-cutoff pairs we found were discarded as
+Three features deserve emphasis. First, 58% of the post-cutoff pairs we found were discarded as
 already known — the step that most distinguishes a time split from a random one. Second, the
-59.3% reachability figure means that mechanism-verified evaluation on this knowledge base is
+61.4% reachability figure means that mechanism-verified evaluation on this knowledge base is
 bounded well below perfect recall; a system reporting 0.5 recall under verification may be close
 to the achievable maximum rather than far from it.
+
+Third, the evaluation split is frozen rather than redrawn. Sampling the split from the pool of
+eligible diseases makes its membership depend on the size of that pool: correcting the entity
+grounding described in Section 7.7 changed the pool by 18 diseases out of 1,149 and that
+reshuffled 129 of the 200 evaluation diseases, which would have invalidated every model run
+behind this paper. The split is therefore stored as a file (`data/manual/eval_split.csv`) and
+read back on every rebuild, and the fallback draw selects diseases by a hash of each disease's
+own identifier so that a changed pool moves the split only at its margin. Six of the 200 drawn
+diseases turn out to have no remaining positive once the grounding is corrected — in every case
+their sole positive was a name-matching artefact, so no system could ever have scored on them —
+and all reported metrics are over the remaining 194.
 
 ### 7.2 Knowledge-graph baselines
 
 | System | MRR | Hit@1 | Hit@5 | Hit@10 | Hit@20 |
 |---|---|---|---|---|---|
-| Popularity | 0.029 [0.015, 0.047] | 0.010 | 0.055 | 0.075 | 0.085 |
-| Network proximity | 0.012 [0.005, 0.020] | 0.000 | 0.020 | 0.035 | 0.055 |
-| ComplEx | 0.007 [0.004, 0.010] | 0.000 | 0.000 | 0.020 | 0.045 |
+| Popularity | 0.030 [0.015, 0.048] | 0.010 | 0.057 | 0.077 | 0.088 |
+| Network proximity | 0.012 [0.005, 0.021] | 0.000 | 0.021 | 0.036 | 0.057 |
+| ComplEx | 0.007 [0.003, 0.011] | 0.000 | 0.000 | 0.015 | 0.041 |
 
-**Table 2.** Baselines over 200 diseases and 565 positives; 95% CI from a disease-level
-bootstrap. Full table with Recall@K in `runs/report_baselines/`.
+**Table 2.** Baselines over the 194 evaluation diseases and 546 positives; 95% CI from a
+disease-level bootstrap. Full table with Recall@K in `runs/report_baselines/`.
 
 The absolute numbers are low: the task is to rank ~8,000 drugs for an average of 2.8 unseen
 positives per disease, and the positives are, by construction, pairs that nothing in the 2021
@@ -447,37 +469,37 @@ inference. Notably, popularity outperforms both structural methods, which is a u
 for any work reporting graph-based repurposing gains without a frequency baseline.
 
 Under probe-masked scoring (Section 7.4) the same systems move by at most 0.005 Hit@20
-(199 diseases, 553 positives), indicating the split is not sensitive to the handful of pairs the
+(192 diseases, 522 positives), indicating the split is not sensitive to the handful of pairs the
 probed model claims to know.
 
 ### 7.3 Faithfulness, accuracy, and the gap between them
 
 | Model | System | Proposals | Verified | **Fabricated** | Unresolvable | Malformed path |
 |---|---|---|---|---|---|---|
-| qwen2.5-7b | closed book | 3,516 | 0.003 | **0.211** | 0.695 | 0.676 |
-| qwen2.5-7b | RAG, no verifier | 2,592 | 0.895 | **0.046** | 0.013 | 0.043 |
-| qwen2.5-7b | RAG + verify-revise | 2,478 | 0.958 | **0.018** | 0.005 | 0.017 |
-| llama3.1-8b | closed book | 3,835 | 0.009 | **0.289** | 0.552 | 0.555 |
-| llama3.1-8b | RAG, no verifier | 1,081 | 0.000 | **0.944** | 0.023 | 0.851 |
-| llama3.1-8b | RAG + verify-revise | 981 | 0.030 | **0.902** | 0.002 | 0.825 |
+| qwen2.5-7b | closed book | 3,408 | 0.004 | **0.208** | 0.700 | 0.678 |
+| qwen2.5-7b | RAG, no verifier | 2,506 | 0.908 | **0.039** | 0.014 | 0.039 |
+| qwen2.5-7b | RAG + verify-revise | 2,410 | 0.959 | **0.018** | 0.005 | 0.017 |
+| llama3.1-8b | closed book | 3,735 | 0.009 | **0.290** | 0.550 | 0.558 |
+| llama3.1-8b | RAG, no verifier | 1,051 | 0.000 | **0.942** | 0.024 | 0.850 |
+| llama3.1-8b | RAG + verify-revise | 955 | 0.030 | **0.899** | 0.002 | 0.845 |
 
-**Table 3.** Faithfulness over 200 evaluation diseases, 14,483 proposals from two models under
+**Table 3.** Faithfulness over the 194 evaluation diseases, 14,065 proposals from two models under
 identical prompts, tools and budgets. Only `qwen2.5-7b`'s unverified configuration cited
 anything: 20 PubMed identifiers, all invalid.
 
 | Model | System | MRR | Hit@5 | Hit@20 | Coverage | Correct hits | Input tokens |
 |---|---|---|---|---|---|---|---|
-| — | **Popularity** | **0.029** | 0.055 | **0.085** | 1.000 | **17** | 0 |
-| — | Network proximity | 0.012 | 0.020 | 0.055 | 1.000 | 11 | 0 |
-| — | ComplEx | 0.007 | 0.000 | 0.045 | 1.000 | 9 | 0 |
-| qwen2.5-7b | closed book | 0.016 | 0.040 | 0.055 | 0.995 | 13 | 85,925 |
-| qwen2.5-7b | RAG, no verifier | 0.010 | 0.020 | 0.040 | 0.925 | 8 | 11,677,655 |
-| qwen2.5-7b | RAG + verify-revise | 0.010 | 0.020 | 0.045 | 0.910 | 9 | 12,735,285 |
-| llama3.1-8b | closed book | 0.020 | 0.035 | 0.050 | 0.960 | 11 | 83,162 |
-| llama3.1-8b | RAG, no verifier | 0.006 | 0.010 | 0.020 | 0.620 | 4 | 1,884,196 |
-| llama3.1-8b | RAG + verify-revise | 0.006 | 0.010 | 0.020 | 0.630 | 4 | 3,472,891 |
+| — | **Popularity** | **0.030** | 0.057 | **0.088** | 1.000 | **17** | 0 |
+| — | Network proximity | 0.012 | 0.021 | 0.057 | 1.000 | 11 | 0 |
+| — | ComplEx | 0.007 | 0.000 | 0.041 | 1.000 | 8 | 0 |
+| qwen2.5-7b | closed book | 0.016 | 0.041 | 0.057 | 0.995 | 13 | 83,398 |
+| qwen2.5-7b | RAG, no verifier | 0.010 | 0.021 | 0.041 | 0.923 | 8 | 11,373,366 |
+| qwen2.5-7b | RAG + verify-revise | 0.010 | 0.021 | 0.046 | 0.912 | 9 | 12,316,771 |
+| llama3.1-8b | closed book | 0.021 | 0.036 | 0.052 | 0.964 | 11 | 80,716 |
+| llama3.1-8b | RAG, no verifier | 0.006 | 0.010 | 0.021 | 0.608 | 4 | 1,844,408 |
+| llama3.1-8b | RAG + verify-revise | 0.006 | 0.010 | 0.021 | 0.629 | 4 | 3,391,410 |
 
-**Table 4.** Ranking over the same 200 diseases and 565 positives. "Correct hits" counts
+**Table 4.** Ranking over the same 194 diseases and 546 positives. "Correct hits" counts
 positives recovered in a top-20 list, summed over diseases.
 
 ![Faithfulness against accuracy for all six systems](figures/fig1_faithfulness_vs_accuracy.png)
@@ -493,29 +515,30 @@ opposite ends of the fabrication axis, and the baseline that reads nothing ranks
 ![Effect of verification on three measures](figures/fig2_verification_effect.png)
 
 **Figure 2.** The same intervention on two models. Grounding drives `qwen2.5-7b`'s fabricated
-edges down (0.211 → 0.046 → 0.018) and `llama3.1-8b`'s up (0.289 → 0.944 → 0.902), while for
+edges down (0.208 → 0.039 → 0.018) and `llama3.1-8b`'s up (0.290 → 0.942 → 0.899), while for
 both it empties the unresolvable column — the errors move from uncheckable to checkable, and
 which way they then land is the model's doing. Hit@20 is flat within each model, and all six
 configurations sit below the popularity baseline (dashed).
 
 **On one model, grounding and verification act on faithfulness, strongly.** With `qwen2.5-7b`,
-the closed-book agent fabricates 21.1% of its mechanism edges, leaves 69.5% unresolvable,
+the closed-book agent fabricates 20.8% of its mechanism edges, leaves 70.0% unresolvable,
 produces malformed paths in 67.6% of proposals, and has 0.3% of its proposals verified — 12 of
 3,516. Adding graph tools takes fabrication to 4.6% and unresolvable endpoints to 1.3%. Adding
 edge-level verification with one revision round takes fabrication to 1.8%: three fifths of the
 remaining fabricated claims disappear, for 9% more input tokens. The verified agent also submits
-fewer proposals (2,478 against 2,592), part of the gain being claims withdrawn rather than
+fewer proposals (2,410 against 2,506), part of the gain being claims withdrawn rather than
 repaired, which is the intended behaviour.
 
 **On the other model, the same intervention makes fabrication worse.** With `llama3.1-8b`,
-grounding takes the fabricated-edge rate *up*, from 0.289 closed book to 0.944 with the full tool
-set, and verification barely moves it (0.902). The mechanism is visible in the traces. Over 200
-diseases `llama3.1-8b` called `find_mechanism_paths` eleven times, against `qwen2.5-7b`'s 2,645.
+grounding takes the fabricated-edge rate *up*, from 0.290 closed book to 0.942 with the full tool
+set, and verification barely moves it (0.899). The mechanism is visible in the traces. Over the
+194 evaluation diseases `llama3.1-8b` called `find_mechanism_paths` eleven times, against
+`qwen2.5-7b`'s 2,645.
 Instead of asking for a path it reused identifiers it had already seen — mostly from
 `rank_candidate_drugs`, which returns *drugs* — and presented them as targets. Of the nodes it
 named as a drug's target, 688 were drugs, 172 were genes and 11 were anatomical structures; among
 the most frequent was `kg:12345`, a round number of exactly the kind that produced its
-counterpart's invented `PMID12345`. Its paths are then malformed in 82.5% of proposals, usually
+counterpart's invented `PMID12345`. Its paths are then malformed in 84.5% of proposals, usually
 for having no gene on them at all.
 
 That inversion is the result we would not have had from one model. **Grounding does not make a
@@ -527,15 +550,15 @@ and false. A benchmark that reported only the unresolvable rate would have calle
 model's grounded configuration its best (0.002 against 0.552 closed book).
 
 **Neither model's faithfulness buys accuracy.** For `qwen2.5-7b`, verification moves MRR by
-0.0004 (paired bootstrap over diseases, *p* = 0.70) and Hit@20 by 0.005 (*p* = 0.70); for
-`llama3.1-8b`, by 0.0004 (*p* = 0.60) and 0.000 (*p* = 1.00). In both models the closed-book
+0.0004 (paired bootstrap over diseases, *p* = 0.72) and Hit@20 by 0.005 (*p* = 0.72); for
+`llama3.1-8b`, by 0.0004 (*p* = 0.64) and 0.000 (*p* = 1.00). In both models the closed-book
 agent — the least verifiable configuration — ranks at least as well as the grounded ones: for
-`qwen2.5-7b` the difference is not significant (*p* = 0.41), for `llama3.1-8b` it is (0.020
-against 0.006, *p* = 0.048). And no LLM
+`qwen2.5-7b` the difference is not significant (*p* = 0.38), for `llama3.1-8b` it is (0.021
+against 0.006, *p* = 0.030). And no LLM
 configuration of either model reaches the popularity baseline. Against `qwen2.5-7b`'s verified
-agent, ranking drugs by how many indications they already have scores MRR 0.029 and Hit@20 0.085
-against 0.010 and 0.045, significant on MRR (*p* = 0.014) though not on Hit@20 (*p* = 0.138);
-against `llama3.1-8b`'s, popularity is better on both at *p* = 0.002.
+agent, ranking drugs by how many indications they already have scores MRR 0.030 and Hit@20 0.088
+against 0.010 and 0.046, significant on MRR (*p* = 0.012) though not on Hit@20 (*p* = 0.118);
+against `llama3.1-8b`'s, popularity is better on both at *p* < 0.001.
 
 This decoupling is the central empirical result, and it now holds across two models. A paper
 reporting only faithfulness would conclude that verification works; one reporting only ranking
@@ -547,21 +570,21 @@ diseases (coverage 0.62–0.63, against 0.91–0.93 for `qwen2.5-7b` and 0.96–
 closed-book and baseline systems). Unanswered diseases score zero rather than being dropped, so
 this is counted against it rather than hidden.
 
-**The agent ignores the literature.** Across 200 diseases `qwen2.5-7b`'s unverified
+**The agent ignores the literature.** Across the 194 evaluation diseases `qwen2.5-7b`'s unverified
 configuration called `search_pubmed` once and made 2,496 `find_mechanism_paths` calls; the
 verified one called it once against 2,645. The unverified agent nevertheless attached 20 PubMed
 identifiers to its proposals,
 drawn from just two invented placeholders (`PMID12345`, `PMID67890`); all 20 failed resolution or
 the date check, and none of its citations was admissible. The honest reading is not that
-fabricated citations are frequent here — 20 across 2,592 proposals is rare — but that an agent
+fabricated citations are frequent here — 20 across 2,506 proposals is rare — but that an agent
 given a literature tool declined to use it and still volunteered references, every one of them
 invented. An evaluation that reads citations without resolving them cannot distinguish that from
 genuine support.
 
 **A correction we are recording rather than replacing.** An earlier 12-disease pilot of the same
 three systems gave fabricated-edge rates of 0.144 (closed book), 0.228 (no verifier) and 0.031
-(verified) — a 7.4-fold effect of verification against the 2.6-fold measured here, and a
-citation rate of 20 identifiers per 173 proposals against 20 per 2,592. The pilot overstated the
+(verified) — a 7.4-fold effect of verification against the 2.2-fold measured here, and a
+citation rate of 20 identifiers per 173 proposals against 20 per 2,506. The pilot overstated the
 effect roughly threefold and made rare behaviour look routine. We report this because
 faithfulness is often measured on a handful of hand-picked cases, and a twelve-disease sample was
 enough to be wrong by a factor of three in the direction that favours the method under test.
@@ -572,7 +595,7 @@ to automatic; `qwen2.5-7b`'s 95.8% says as much about the tool as about the mode
 `llama3.1-8b`'s 3.0% says that it did not use the tool. The informative quantities are the
 differences between configurations and between models, not the absolute rate.
 
-Stratifying to pairs that reached phase 3 or beyond (115 diseases) leaves the picture intact and
+Stratifying to pairs that reached phase 3 or beyond (113 diseases) leaves the picture intact and
 the LLM systems weaker still: the grounded configurations recover a single positive each in
 their top 20 against popularity's eleven (`runs/report_full_phase3/`). Probe-masked scoring
 (Section 7.4) changes no system by more than 0.001 on any ranking metric.
@@ -591,7 +614,12 @@ their top 20 against popularity's eleven (`runs/report_full_phase3/`). Probe-mas
 **Table 5.** Closed-book probe, 965 items per model.
 
 The model is asked, with no tools, whether each pair has reached a phase 2+ trial or approval and
-since when; a claim carrying a post-cutoff year, or no year, is flagged.
+since when; a claim carrying a post-cutoff year, or no year, is flagged. The probe items were
+drawn from the ground truth as it stood before the grounding correction of Section 7.7, so its
+565 target items are a superset of the 546 positives reported elsewhere: 32 of them are pairs the
+correction removed. We did not re-run it, because a probe asked about a few extra pairs still
+answers the question it is there to answer — whether the model's weights carry post-cutoff
+knowledge — and re-running it would change the controls it is calibrated against.
 
 The controls carry the inference. The yes-rate gap between pairs known at the cutoff and random
 pairs is 0.285 for `qwen2.5-7b` and 0.431 for `llama3.1-8b`, so in both cases the probe
@@ -622,19 +650,19 @@ probe writes a per-model report for that purpose.
 
 | Model | System | Input tokens | Output tokens | Correct hits | Tokens per correct hit |
 |---|---|---|---|---|---|
-| qwen2.5-7b | closed book | 85,925 | 502,397 | 13 | **45,256** |
-| qwen2.5-7b | RAG, no verifier | 11,677,655 | 590,537 | 8 | 1,533,524 |
-| qwen2.5-7b | RAG + verify-revise | 12,735,285 | 701,714 | 9 | 1,493,000 |
-| llama3.1-8b | closed book | 83,162 | 617,479 | 11 | 63,695 |
-| llama3.1-8b | RAG, no verifier | 1,884,196 | 520,375 | 4 | 601,143 |
-| llama3.1-8b | RAG + verify-revise | 3,472,891 | 654,970 | 4 | 1,031,965 |
+| qwen2.5-7b | closed book | 83,398 | 487,960 | 13 | **43,951** |
+| qwen2.5-7b | RAG, no verifier | 11,373,366 | 567,307 | 8 | 1,492,584 |
+| qwen2.5-7b | RAG + verify-revise | 12,316,771 | 677,320 | 9 | 1,443,788 |
+| llama3.1-8b | closed book | 80,716 | 597,643 | 11 | 61,669 |
+| llama3.1-8b | RAG, no verifier | 1,844,408 | 508,827 | 4 | 588,309 |
+| llama3.1-8b | RAG + verify-revise | 3,391,410 | 635,875 | 4 | 1,006,821 |
 | — | Popularity | 0 | 0 | 17 | 0 |
 
-**Table 7.** Cost over 200 diseases. Hits are positives recovered in a top-20 list.
+**Table 7.** Cost over the 194 evaluation diseases. Hits are positives recovered in a top-20 list.
 
 Tool use dominates the bill: the grounded configurations read roughly 136 times as many input
 tokens as the closed-book agent, because every path enumeration and candidate screen returns to
-the context. Verification adds 9% on top of that (12.74 M against 11.68 M input tokens) and is
+the context. Verification adds 8% on top of that (12.32 M against 11.37 M input tokens) and is
 the cheapest intervention here per unit of faithfulness gained. Per correct hit, however, the
 ordering inverts: the closed-book agent is 33 times cheaper than the verified one and recovers
 more positives, and the popularity baseline costs nothing at all and recovers most. A reader
@@ -642,7 +670,7 @@ deciding whether to deploy an agentic pipeline for *candidate generation*, as op
 candidate *justification*, should weigh that directly.
 
 The ordering is the same for `llama3.1-8b` and the gap is wider: its closed-book agent recovers
-eleven positives at 63,695 tokens each, its verified agent four at 1,031,965. Across both models
+eleven positives at 61,669 tokens each, its verified agent four at 1,006,821. Across both models
 the pattern is that the cheapest configuration recovers the most, and the free baseline recovers
 more than any of them.
 
@@ -657,10 +685,10 @@ concurrent turns against one instance stalled, and one worker was also faster pe
 ### 7.6 How much does a "verified mechanism" mean?
 
 **Role sensitivity.** Requiring the drug→protein hop to be a curated *target*, rather than any
-of PrimeKG's four `drug_protein` roles, drops the verified-proposal rate from 0.958 to 0.843 for
-the verified agent and from 0.895 to 0.786 without verification: about one in nine accepted
+of PrimeKG's four `drug_protein` roles, drops the verified-proposal rate from 0.959 to 0.841 for
+the verified agent and from 0.908 to 0.794 without verification: about one in nine accepted
 mechanisms runs through a metabolising enzyme, transporter or carrier instead of a target. The
-malformed-path rate rises correspondingly (0.017 → 0.132 and 0.043 → 0.152), while fabricated-edge
+malformed-path rate rises correspondingly (0.017 → 0.134 and 0.039 → 0.152), while fabricated-edge
 rates and all ranking metrics are unchanged — a role objection is not a false claim, and it does
 not alter which drugs were proposed.
 
@@ -754,6 +782,87 @@ What this check does establish is a negative result that the ranking metrics sup
 mechanism-verified pipeline over this knowledge base did not surface drug–disease pairs that the
 subsequent literature went on to discuss, relative to comparable drugs.
 
+### 7.7 Two defects in the benchmark's own construction
+
+A benchmark that scores others on whether their claims survive checking has to report what
+happened when we checked its own. Two defects surfaced after the runs were complete, both in the
+machinery that turns a free-text mention into a graph node. Neither changes any conclusion above;
+both change numbers, and the numbers in this paper are the corrected ones.
+
+**Bracketed fragments were being indexed as names.** Our normaliser emitted the contents of every
+parenthesis as a lookup key of its own, on the reasoning that "non-small cell lung cancer
+(NSCLC)" should also be findable as "NSCLC". But a bracket is used for qualifiers far more often
+than for acronyms, in three vocabularies at once. MONDO tags its labels — *extramedullary
+plasmacytoma (clinical)*, *glutaric aciduria (disease)*, *gonococcal cervicitis (acute)* — so the
+bare words "clinical", "disease" and "acute" each resolved to a specific disease, "disease" to
+schizophrenia. Chemical nomenclature brackets isotopes, oxidation states and stereo descriptors,
+so the graph's own name for FDG, *Fludeoxyglucose (18F)*, indexed the key "18f" and every
+`[18F]`-labelled PET tracer in ClinicalTrials.gov resolved to it. And short acronyms collide
+across specialties: "atopic dermatitis (AD)" resolved to Alzheimer disease, "chronic lymphocytic
+leukemia (CLL)" to an acute leukaemia.
+
+A bracketed fragment is now indexed only when it reads as an acronym — mostly capitals, and
+longer than four characters, which keeps "NSCLC" and "HFpEF" and discards "(clinical)", "(18F)"
+and "(AD)". Separately, a category noun such as *disease* or *disorder* is never indexed, because
+an ontology gives its grouping terms the bare noun as a synonym and a category noun alone names
+no entity.
+
+The effect is concentrated and measurable; `scripts/measure_grounding_correction.py` rebuilds the
+ground truth under both rules and writes the difference. Of 2,796 novel positives under the old
+rule, **127 were spurious and removed**; 114 of those 127 had a bracketed drug name and 33 were
+FDG alone, over 49 distinct drugs in all. In exchange **62 positives were added**, almost all
+genuine pairs — spironolactone in glioblastoma,
+baricitinib in hepatocellular carcinoma, lenvatinib and camrelizumab in liver neoplasm — that had
+been *lost* because a spurious second drug match made their trial fail the single-drug filter.
+Six of the 200 drawn evaluation diseases turned out to rest entirely on such an artefact: each had
+exactly one positive, and it was sodium chloride for *syringocystadenoma papilliferum* (from a
+trial of severe community-acquired pneumonia, "sCAP"), an experimental quinazolinone for multiple
+system atrophy, FDG for paraganglioma, a clotting-factor concentrate for Burkitt lymphoma, and two
+more of the same kind. No system could ever have scored on those six, and all results here are
+over the remaining 194. The independent check agrees: re-scoring the 200-trial mapping audit of
+Section 3.2 under the corrected grounding raised drug precision from 0.942 to 0.990, removing five
+of the six drug errors that audit had found before either defect was known.
+
+**The ground truth was not reproducible.** Two builds from byte-identical inputs disagreed on
+three positives. The cause was a tie-break: fuzzy name matching first narrows candidates by shared
+character trigrams, and ties on the shared-trigram count — of which there are many — were settled
+by `Counter.most_common`, that is, by insertion order, which follows the iteration order of a set
+of trigrams and therefore differs between processes under hash randomisation. A different
+candidate pool reaches the scorer, and a different name wins. Ties are now settled on the name
+itself, and the build is byte-identical across interpreters started with different
+`PYTHONHASHSEED` values; a test asserts it. We note this because a benchmark is a shared
+measuring instrument, and an instrument that gives a slightly different reading each time it is
+read cannot support the two-digit differences that papers in this area report.
+
+### 7.8 Why the approved tier carries no analysis
+
+The ground truth's strongest label is a regulatory approval of a new indication for an existing
+drug, and we had intended to report ranking metrics on that tier separately. It cannot carry
+them, and the reason is worth stating as a measurement rather than an omission.
+
+Drugs@FDA records **398** approved efficacy supplements with action type *Efficacy-New
+Indication* in the window, of which **265** name an active ingredient that resolves to a drug in
+the graph. The release records that such an approval happened but not what the indication was, so
+we fetched the approval letters: **190** were retrievable and **153** contained the operative
+clause naming what the supplement provides for. Resolving the longest span of each clause that
+matches an ontology term proposes a disease for **125** of them; an author then confirmed,
+corrected or rejected every proposal against the letter, keeping **114** (ten corrected, eleven
+rejected — withdrawals, re-wordings, dosing changes, a diagnostic imaging agent, and indications
+whose treated condition the graph cannot name, such as agitation or iron deficiency).
+
+Of those 114 curated approvals, **90 were already known at the cutoff** — the drug–disease pair
+already carried a graph indication or a pre-cutoff trial — which is what a time split should do
+to them. That leaves **24** novel approved pairs over 19 drugs and 21 diseases, and **1** of them
+falls on a disease in the 194-disease evaluation split.
+
+One positive supports no stratified comparison, and we report none. The funnel is the finding: a
+regulatory approval is the label a repurposing benchmark most wants, and over a five-year
+post-cutoff window an exhaustive pass over the FDA's own bulk release yields single digits once
+pairs already in trials are excluded. Any evaluation that claims to measure repurposing against
+approvals is either using a much longer window, a much larger disease set, or counting approvals
+that were already in the clinic before its cutoff. The curated file is released so the tier can
+be pooled across benchmarks, which is the only way we see to make it usable.
+
 ## 8 Discussion
 
 **Verification is cheap and it works — on the thing it targets.** The comparison that matters is
@@ -769,14 +878,14 @@ a more faithful agent is a more useful one.
 models the least verifiable configuration ranked best among the LLM systems, and neither
 model's most faithful configuration came close to ranking drugs by their existing indication
 count. The mechanism path requirement plausibly constrains the grounded agents toward candidates
-the graph can justify, which is a narrower set than the clinically interesting one — the 59.3%
+the graph can justify, which is a narrower set than the clinically interesting one — the 61.4%
 reachability ceiling (Section 3.4) bounds that explicitly. We read the pattern as evidence that
 reporting either quantity alone invites a conclusion the other contradicts.
 
 **What grounding does to fabrication is a property of the model, not of the tooling.** This is
 the finding we could not have had from one model, and it reverses sign between them: the same
-tools took `qwen2.5-7b` from 0.211 fabricated edges to 0.046, and `llama3.1-8b` from 0.289 to
-0.944. Identifiers do not make claims true, they make claims *checkable*; a model that queries
+tools took `qwen2.5-7b` from 0.208 fabricated edges to 0.039, and `llama3.1-8b` from 0.290 to
+0.942. Identifiers do not make claims true, they make claims *checkable*; a model that queries
 for a path produces checkable claims that hold, and a model that recycles identifiers it has
 already seen produces checkable claims that do not. The practical consequence for anyone
 building such a system is that the gain from grounding has to be measured on the model being
@@ -803,16 +912,16 @@ a matter of course.
 
 **What the benchmark cannot settle.** Trial initiation is evidence of clinical interest, not of
 efficacy; tier-stratified results (`--min-tier phase3`, `approved`) are provided for that reason.
-And the 59.3% reachability ceiling means a mechanism-verified system is scored against a
+And the 61.4% reachability ceiling means a mechanism-verified system is scored against a
 knowledge base that cannot express the mechanism for two of every five positives.
 
 ## 9 Limitations
 
 * PrimeKG's constituent resources have differing release dates around 2021, so the snapshot
   approximates the cutoff rather than matching it exactly.
-* Entity mapping from trial records is imperfect in both directions: 64.9% of trials yield a
-  drug and 77.3% a disease, and of the mappings made, 0.942 and 0.890 are correct
-  (Section 3.2). Roughly one disease mapping in nine is wrong, which propagates into the
+* Entity mapping from trial records is imperfect in both directions: 64.2% of trials yield a
+  drug and 77.2% a disease, and of the mappings made, 0.990 and 0.889 are correct
+  (Section 3.2). Roughly one disease mapping in nine is still wrong, which propagates into the
   positives and is corrected nowhere downstream.
 * That audit was performed by an author rather than an independent rater, and with the
   assistance of a language model — the same class of system the benchmark evaluates. It is not
@@ -841,7 +950,18 @@ knowledge base that cannot express the mechanism for two of every five positives
   proposals on a second pass.
 * Ranking differences among the LLM systems are small relative to their confidence intervals, so
   the ordering within that group should not be over-read. The comparison that is significant is
-  popularity against the verified agent on MRR (*p* = 0.014).
+  popularity against the verified agent on MRR (*p* = 0.012).
+* The grounding correction of Section 7.7 buys precision with recall. A bracketed acronym is no
+  longer a lookup key, so a trial whose condition is spelled differently from the ontology label
+  and disambiguated only by its acronym no longer maps: in the 200-trial audit this cost one
+  mapping of 154, a trial reading "Coronary Arterial Disease (CAD)" against a graph label of
+  "coronary artery disease". We prefer the trade because a lost mapping is counted as coverage
+  while a wrong one enters the ground truth, but the benchmark is now slightly more conservative
+  than its coverage figures from before the correction.
+* Diagnostic and contrast agents are not excluded, and 8 of the 2,731 positives pair a disease
+  with one — iohexol, perflutren and three `18F` tracers — of which 2 fall in the evaluation
+  split. A name-pattern filter would also remove genuine radioligand therapies such as lutetium
+  Lu 177 dotatate, so we report the residual rather than filter on the name.
 * No human expert rated the proposals. Section 6.4 argues that the checks we report answer more
   of what a reviewer needs than a plausibility panel would, and that they are reproducible where
   a panel is not, but they do not establish that a pharmacologist would find the surviving
@@ -868,10 +988,24 @@ with their full verification records, and the generated reports will be deposite
 *GigaScience* repository GigaDB, and the DOI inserted here `[to be assigned on deposit]`.
 
 A `reverify` command re-scores saved proposals with an updated verifier without re-running any
-model, which is how the revised taxonomy in Section 4.3 was applied to runs already completed.
-`paper/check_numbers.py` re-derives every number quoted in this manuscript from those artefacts
-and fails if the text disagrees. The test suite comprises 58 tests over a synthetic graph and a
-mock model and requires no network access.
+model, which is how the revised taxonomy in Section 4.3 and the grounding correction of
+Section 7.7 were applied to runs already completed. `paper/check_numbers.py` re-derives every
+number quoted in this manuscript from those artefacts and fails if the text disagrees. The test
+suite comprises 68 tests over a synthetic graph and a mock model and requires no network access;
+two of them guard reproducibility directly, asserting that grounding does not depend on a set's
+iteration order and that it is identical across interpreters started with different
+`PYTHONHASHSEED` values.
+
+These curated files carry the judgements this paper rests on, and are released with it; the
+derived data under `data/processed/` is regenerable from them and is not:
+
+| File | Contents |
+|---|---|
+| `data/manual/eval_split.csv` | the frozen 200-disease evaluation split (Section 7.1) |
+| `data/manual/approvals_after_cutoff.csv` | 114 author-curated FDA new-indication approvals, each with the approval letter's own clause as its note (Section 7.8) |
+| `data/manual/approvals_candidates.csv` | the worksheet those were judged from: every candidate approval, its letter quote, the proposed ontology term and the link to the FDA record |
+| `data/manual/mapping_audit.csv` | the 200-trial entity-mapping audit with its per-row judgements (Section 3.2) |
+| `scripts/measure_grounding_correction.py` | regenerates every positive added or removed by the grounding correction, as a CSV and the counts quoted in Section 7.7 |
 
 ### Source versions
 
@@ -983,7 +1117,12 @@ python -m repurpose_verify download all          # PrimeKG parts, MONDO, HGNC
 python -m repurpose_verify build-kg
 python -m repurpose_verify build-gt
 python -m repurpose_verify audit-mapping -n 200  # worksheet for the entity-mapping audit
-python -m repurpose_verify fda-approvals         # candidate new-indication approvals
+python -m repurpose_verify audit-mapping --score data/processed/groundtruth/mapping_audit.csv
+python -m repurpose_verify fda-approvals --with-letters   # approvals + their approval letters
+
+# build-gt reads the frozen evaluation split from data/manual/eval_split.csv and the curated
+# approvals from data/manual/approvals_after_cutoff.csv, both released with the paper. Delete
+# the split file to draw a fresh one; the draw is then a hash of each disease's own identifier.
 
 # Knowledge-graph baselines.
 python -m repurpose_verify baseline popularity
@@ -1004,12 +1143,20 @@ python -m repurpose_verify evaluate --runs runs/qwen25-7b__*revise runs/qwen25-7
 
 # Both models together, and the manuscript's own checks.
 python -m repurpose_verify evaluate --runs runs/qwen25-7b__* runs/llama31-8b__*   runs/popularity runs/proximity runs/complex --out runs/report_two_models
+python scripts/measure_grounding_correction.py   # the Section 7.7 difference
 python paper/check_numbers.py
 python paper/make_figures.py
 ```
 
+After either curated file is edited, `bash scripts/refresh_after_curation.sh` redoes everything
+downstream of it in one command: it rebuilds the ground truth, re-verifies each run's stored
+proposals against the current verifier, re-scores every report, re-reads the audit sheet, redraws
+the figures and re-checks the manuscript. No model is called — the proposals are already on disk.
+
 Every external response is cached under `data/cache/`, so a second run of any of these reads the
-archived evidence rather than the live services, and reproduces the reported numbers exactly.
+archived evidence rather than the live services, and reproduces the reported numbers exactly —
+exactly in the literal sense, since the correction in Section 7.7: two builds of the ground truth
+from the same cache are now byte-identical.
 
 ## Appendix B Prompts
 

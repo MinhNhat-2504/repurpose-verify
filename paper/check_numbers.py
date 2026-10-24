@@ -36,6 +36,13 @@ SECOND_PROBE = ROOT / "runs" / "probes" / "llama31-8b.jsonl"
 SECOND_EXTERNAL = ROOT / "runs" / "report_external_llama31-8b" / "report.json"
 # Written by `audit-mapping --score` once the sheet is filled; absent until then.
 MAPPING_SCORE = ROOT / "runs" / "mapping_audit_score.json"
+# Written by scripts/measure_grounding_correction.py (Section 7.7).
+GROUNDING = ROOT / "data" / "processed" / "groundtruth" / "grounding_correction.json"
+# The hand-curated approvals and the worksheet they were judged from (Section 7.8).
+APPROVALS = ROOT / "data" / "manual" / "approvals_after_cutoff.csv"
+APPROVAL_WORKSHEET = ROOT / "data" / "manual" / "approvals_candidates.csv"
+POSITIVES = ROOT / "data" / "processed" / "groundtruth" / "positives.csv"
+EVAL_SPLIT = ROOT / "data" / "processed" / "groundtruth" / "eval_diseases.csv"
 SECOND_SYSTEMS = ("llama31-8b__closed_book", "llama31-8b__rag_verify-none",
                   "llama31-8b__rag_verify-revise")
 COMPARISONS = ROOT / "runs" / "report_full" / "comparisons.csv"
@@ -291,6 +298,39 @@ def collect_claims() -> list[tuple[str, str, str]]:
                     (f"{kind} mapping precision", _fmt(entry["precision"], 3), src),
                     (f"{kind} mapping judged", str(entry["judged"]), src),
                 ]
+
+    if GROUNDING.exists():
+        g = json.loads(GROUNDING.read_text(encoding="utf-8"))
+        src = GROUNDING.name
+        claims += [
+            ("positives before the grounding fix", f"{g['positives_before']:,}", src),
+            ("spurious positives removed", str(g["removed"]), src),
+            ("positives restored", str(g["added"]), src),
+            ("removed with a bracketed drug name", str(g["removed_with_bracketed_drug_name"]), src),
+            ("removed that are FDG", str(g["removed_drug_is_fdg"]), src),
+            ("distinct drugs in the removed set", str(g["removed_distinct_drugs"]), src),
+        ]
+
+    if APPROVALS.exists() and APPROVAL_WORKSHEET.exists():
+        work = pd.read_csv(APPROVAL_WORKSHEET, encoding="utf-8-sig")
+        cur = pd.read_csv(APPROVALS, encoding="utf-8-sig")
+        pos = pd.read_csv(POSITIVES)
+        in_eval = set(pd.read_csv(EVAL_SPLIT).disease_idx)
+        approved = pos[pos.tier == "approved"]
+        src = "approvals_candidates.csv + positives.csv"
+        claims += [
+            ("approvals matching a graph drug", str(len(work)), src),
+            ("approval letters naming an indication", str(int(work.letter_indication.notna().sum())),
+             src),
+            ("approvals with a proposed disease", str(int(work.proposed_kg_id.notna().sum())), src),
+            ("curated approvals kept", str(len(cur)), src),
+            ("curated approvals already known at the cutoff", str(len(cur) - len(approved)), src),
+            ("novel approved pairs", str(len(approved)), src),
+            ("novel approved pairs in the evaluation split",
+             str(int(approved.disease_idx.isin(in_eval).sum())), src),
+            ("drugs in the approved tier", str(approved.drug_name.nunique()), src),
+            ("diseases in the approved tier", str(approved.disease_name.nunique()), src),
+        ]
 
     rows = [json.loads(line) for line in PROBE.read_text(encoding="utf-8").splitlines() if line]
     kinds = {k: [r for r in rows if r["kind"] == k] for k in

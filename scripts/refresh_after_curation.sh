@@ -19,7 +19,7 @@ fi
 rv() { "$PYTHON_BIN" -m repurpose_verify "$@"; }
 
 APPROVALS=data/manual/approvals_after_cutoff.csv
-AUDIT=data/processed/groundtruth/mapping_audit.csv
+AUDIT=data/manual/mapping_audit.csv
 
 echo "== curated inputs"
 "$PYTHON_BIN" - "$APPROVALS" "$AUDIT" <<'PY'
@@ -39,6 +39,17 @@ PY
 
 echo "== rebuilding the ground truth"
 rv build-gt || exit 1
+
+echo "== re-verifying the stored proposals with the current verifier"
+# A change to entity grounding changes which edges the verifier can support, and the edge
+# statuses live in each run's rankings.jsonl. Re-scoring without this step would report new
+# ranking metrics next to stale faithfulness metrics. No model is called: the proposals and
+# their text are untouched, only the verification derived from them.
+for MODEL in qwen25-7b llama31-8b; do
+  [ -d "runs/${MODEL}__closed_book" ] || continue
+  rv reverify "runs/${MODEL}__rag_verify-revise" "runs/${MODEL}__rag_verify-none" \
+    "runs/${MODEL}__closed_book" --in-place || exit 1
+done
 
 echo "== rescoring every run against the new positives"
 for MODEL in qwen25-7b llama31-8b; do
