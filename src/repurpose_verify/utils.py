@@ -152,7 +152,7 @@ def download(url: str, dest: Path, chunk: int = 1 << 20, attempts: int = 10) -> 
     return dest
 
 
-def read_jsonl(path: Path) -> Iterator[dict]:
+def read_jsonl(path: Path | str) -> Iterator[dict]:
     with open(path, encoding="utf-8") as f:
         for line in f:
             line = line.strip()
@@ -160,11 +160,19 @@ def read_jsonl(path: Path) -> Iterator[dict]:
                 yield json.loads(line)
 
 
-def write_jsonl(path: Path, rows: Iterable[dict]) -> None:
+def write_jsonl(path: Path | str, rows: Iterable[dict]) -> None:
+    """Rewrite a JSONL file, via a temporary file so a crash cannot truncate the original.
+
+    Callers pass this run records that took hours to produce; a half-written file would be
+    worse than no write at all.
+    """
+    path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    with open(path, "w", encoding="utf-8") as f:
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    with open(tmp, "w", encoding="utf-8") as f:
         for row in rows:
             f.write(json.dumps(row, ensure_ascii=False) + "\n")
+    tmp.replace(path)
 
 
 def append_jsonl(path: Path, row: dict, lock: threading.Lock | None = None) -> None:

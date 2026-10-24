@@ -49,27 +49,30 @@ or a cited pre-cutoff abstract. We report *fabricated* edges (both endpoints rea
 them) apart from *unresolvable* ones (the endpoint names no single entity), because merging them
 overstates fabrication threefold.
 
-Across 200 diseases and 8,586 proposals from an open-weight 7B model, grounding and verification
-act strongly on faithfulness and not at all on accuracy. A closed-book agent fabricates 21.1% of
-its mechanism edges and leaves 69.5% unresolvable, with 0.3% of its proposals verified. Adding
-graph tools takes fabrication to 4.6%; adding edge-level verification with one revision round
-takes it to 1.8%, a 2.6-fold reduction. Ranking, however, is unchanged by verification
-(ΔMRR 0.0004, *p* = 0.70), the closed-book agent ranks no worse than either grounded
-configuration, and **no LLM configuration matches a popularity baseline** (MRR 0.029 against
-0.010–0.016; popularity is significantly better than the verified agent, *p* = 0.014). The
-verified agent spends 1.49 million tokens per correct hit in its top 20. A weight-level leakage
-probe with positive and negative controls finds no post-cutoff signal above its own
-false-positive floor.
+Across 200 diseases and 14,483 proposals from two open-weight models of the same size class,
+grounding and verification act strongly on faithfulness, in opposite directions depending on the
+model, and not at all on accuracy. With `qwen2.5-7b`, a closed-book agent fabricates 21.1% of its
+mechanism edges and leaves 69.5% unresolvable; graph tools take fabrication to 4.6% and
+edge-level verification with one revision round to 1.8%. With `llama3.1-8b` the same tools take
+fabrication the other way, from 0.289 closed book to 0.944, because that model reuses identifiers
+it has seen instead of querying for a path — naming other *drugs* as targets in 688 of its edges.
+Grounding did not make either model truthful; it moved their errors from unresolvable prose into
+checkable claims, which one model then got right and the other wrong. Ranking is untouched by
+verification in both (ΔMRR 0.0004, *p* = 0.70 and 0.60), the closed-book configuration ranks at
+least as well as the grounded ones in both, and **no LLM configuration of either model matches a
+popularity baseline** (MRR 0.029 against 0.006–0.020; *p* = 0.014 and 0.002). A weight-level
+leakage probe with positive and negative controls finds no post-cutoff signal above its own
+false-positive floor for either model.
 
-**Conclusions.** Faithfulness and accuracy are decoupled in current repurposing agents: the
-least faithful configuration ranks best, and the most faithful one does not beat ranking drugs
-by how many indications they already have. Verification is still worth its cost — it removes
-three fifths of the fabricated claims for 9% more input tokens and no measurable loss in ranking
-— but it buys checkability, not discovery. Reporting either quantity alone would have supported
-a conclusion the other contradicts, which is the argument for a benchmark that measures both.
-We also quantify a limit of mechanism-verified evaluation itself: only 59.3% of our positives
-admit any mechanism path in the graph, which caps what a verified-only system can recover
-regardless of the model.
+**Conclusions.** Faithfulness and accuracy are decoupled in current repurposing agents: in both
+models the least verifiable configuration ranks best, and neither beats ranking drugs by how many
+indications they already have. Verification removes three fifths of one model's fabricated claims
+for 9% more input tokens and no measurable loss in ranking, but it buys checkability, not
+discovery — and what grounding does to a model's fabrication rate is a property of the model, so
+single-model evidence about it is unsafe. Reporting either quantity alone, or either model alone,
+would have supported a conclusion the rest of the data contradicts. We also quantify a limit of
+mechanism-verified evaluation itself: only 59.3% of our positives admit any mechanism path in the
+graph, which caps what a verified-only system can recover regardless of the model.
 
 **Availability.** Code, splits, cached evidence and reports: https://github.com/MinhNhat-2504/repurpose-verify
 
@@ -320,7 +323,9 @@ enumeration), `rank_candidate_drugs` (the proximity screen, with known indicatio
 individually. Proposals from *every* system, including those whose ranking is not filtered, are
 verified post hoc, so faithfulness is comparable across systems.
 
-The reported model is `qwen2.5:7b` (documented cutoff 2023-10) served locally. Two deployment
+Two open-weight models of the same size class are reported, so that a difference between them
+is a model difference and not a capacity one: `qwen2.5:7b` (documented cutoff 2023-10) and
+`llama3.1:8b` (2023-12), both served locally. Two deployment
 details affect reproducibility and are easy to get wrong: the server applies its own context
 limit and truncates longer prompts silently, so runs use a derived model with the context raised
 to 16,384 tokens; and concurrent requests against a single instance were observed to leave
@@ -427,65 +432,105 @@ probed model claims to know.
 
 ### 7.3 Faithfulness, accuracy, and the gap between them
 
-| System | Proposals | Verified | **Fabricated** | Unresolvable | Malformed path | Invalid citations |
+| Model | System | Proposals | Verified | **Fabricated** | Unresolvable | Malformed path |
 |---|---|---|---|---|---|---|
-| closed book | 3,516 | 0.003 | **0.211** | 0.695 | 0.676 | — (cited none) |
-| RAG, no verifier | 2,592 | 0.895 | **0.046** | 0.013 | 0.043 | **1.000** (20/20) |
-| RAG + verify-revise | 2,478 | 0.958 | **0.018** | 0.005 | 0.017 | — (cited none) |
+| qwen2.5-7b | closed book | 3,516 | 0.003 | **0.211** | 0.695 | 0.676 |
+| qwen2.5-7b | RAG, no verifier | 2,592 | 0.895 | **0.046** | 0.013 | 0.043 |
+| qwen2.5-7b | RAG + verify-revise | 2,478 | 0.958 | **0.018** | 0.005 | 0.017 |
+| llama3.1-8b | closed book | 3,835 | 0.009 | **0.289** | 0.552 | 0.555 |
+| llama3.1-8b | RAG, no verifier | 1,081 | 0.000 | **0.944** | 0.023 | 0.851 |
+| llama3.1-8b | RAG + verify-revise | 981 | 0.030 | **0.902** | 0.002 | 0.825 |
 
-**Table 3.** Faithfulness over 200 evaluation diseases, `qwen2.5:7b`, 8,586 proposals.
+**Table 3.** Faithfulness over 200 evaluation diseases, 14,483 proposals from two models under
+identical prompts, tools and budgets. Only `qwen2.5-7b`'s unverified configuration cited
+anything: 20 PubMed identifiers, all invalid.
 
-| System | MRR | Hit@5 | Hit@10 | Hit@20 | Coverage | Correct hits | Input tokens |
+| Model | System | MRR | Hit@5 | Hit@20 | Coverage | Correct hits | Input tokens |
 |---|---|---|---|---|---|---|---|
-| Popularity | **0.029** | 0.055 | 0.075 | **0.085** | 1.000 | 17 | 0 |
-| Network proximity | 0.012 | 0.020 | 0.035 | 0.055 | 1.000 | 11 | 0 |
-| ComplEx | 0.007 | 0.000 | 0.020 | 0.045 | 1.000 | 9 | 0 |
-| closed book | 0.016 | 0.040 | 0.050 | 0.055 | 0.995 | 13 | 85,925 |
-| RAG, no verifier | 0.010 | 0.020 | 0.030 | 0.040 | 0.925 | 8 | 11,677,655 |
-| RAG + verify-revise | 0.010 | 0.020 | 0.030 | 0.045 | 0.910 | 9 | 12,735,285 |
+| — | **Popularity** | **0.029** | 0.055 | **0.085** | 1.000 | **17** | 0 |
+| — | Network proximity | 0.012 | 0.020 | 0.055 | 1.000 | 11 | 0 |
+| — | ComplEx | 0.007 | 0.000 | 0.045 | 1.000 | 9 | 0 |
+| qwen2.5-7b | closed book | 0.016 | 0.040 | 0.055 | 0.995 | 13 | 85,925 |
+| qwen2.5-7b | RAG, no verifier | 0.010 | 0.020 | 0.040 | 0.925 | 8 | 11,677,655 |
+| qwen2.5-7b | RAG + verify-revise | 0.010 | 0.020 | 0.045 | 0.910 | 9 | 12,735,285 |
+| llama3.1-8b | closed book | 0.020 | 0.035 | 0.050 | 0.960 | 11 | 83,162 |
+| llama3.1-8b | RAG, no verifier | 0.006 | 0.010 | 0.020 | 0.620 | 4 | 1,884,196 |
+| llama3.1-8b | RAG + verify-revise | 0.006 | 0.010 | 0.020 | 0.630 | 4 | 3,472,891 |
 
 **Table 4.** Ranking over the same 200 diseases and 565 positives. "Correct hits" counts
 positives recovered in a top-20 list, summed over diseases.
 
 ![Faithfulness against accuracy for all six systems](figures/fig1_faithfulness_vs_accuracy.png)
 
-**Figure 1.** The two axes do not move together. Filled circles are the LLM systems; open
-diamonds are the knowledge-graph baselines, which emit no mechanism and therefore have no
-fabrication rate — they are placed in the shaded strip rather than at zero, which would read as
-"never fabricates" instead of "makes no checkable claim". The least faithful system ranks best
-among the LLM configurations, and the baseline that reads nothing ranks best of all.
+**Figure 1.** The two axes do not move together, in either model. Filled circles are the LLM
+systems — green where proposals are verified, orange where they are not, darker shades for
+`llama3.1-8b` — and open diamonds are the knowledge-graph baselines, which emit no mechanism and
+therefore have no fabrication rate; they are placed in the shaded strip rather than at zero,
+which would read as "never fabricates" instead of "makes no checkable claim". Within each model
+the least faithful configuration ranks best, the two models' grounded configurations sit at
+opposite ends of the fabrication axis, and the baseline that reads nothing ranks best of all.
 
 ![Effect of verification on three measures](figures/fig2_verification_effect.png)
 
-**Figure 2.** What verification changes and what it leaves alone. Fabricated edges fall 2.6-fold
-and unresolvable endpoints are already near zero once the agent is grounded; Hit@20 is flat, and
-every configuration sits below the popularity baseline (dashed).
+**Figure 2.** The same intervention on two models. Grounding drives `qwen2.5-7b`'s fabricated
+edges down (0.211 → 0.046 → 0.018) and `llama3.1-8b`'s up (0.289 → 0.944 → 0.902), while for
+both it empties the unresolvable column — the errors move from uncheckable to checkable, and
+which way they then land is the model's doing. Hit@20 is flat within each model, and all six
+configurations sit below the popularity baseline (dashed).
 
-**Grounding and verification act on faithfulness, strongly.** The closed-book agent fabricates
-21.1% of its mechanism edges, leaves 69.5% unresolvable, produces malformed paths in 67.6% of
-proposals, and has 0.3% of its proposals verified — 12 of 3,516. Adding graph tools takes
-fabrication to 4.6% and unresolvable endpoints to 1.3%. Adding edge-level verification with one
-revision round takes fabrication to 1.8%: three fifths of the remaining fabricated claims
-disappear, for 9% more input tokens. The verified agent also submits fewer proposals (2,478
-against 2,592), part of the gain being claims withdrawn rather than repaired, which is the
-intended behaviour.
+**On one model, grounding and verification act on faithfulness, strongly.** With `qwen2.5-7b`,
+the closed-book agent fabricates 21.1% of its mechanism edges, leaves 69.5% unresolvable,
+produces malformed paths in 67.6% of proposals, and has 0.3% of its proposals verified — 12 of
+3,516. Adding graph tools takes fabrication to 4.6% and unresolvable endpoints to 1.3%. Adding
+edge-level verification with one revision round takes fabrication to 1.8%: three fifths of the
+remaining fabricated claims disappear, for 9% more input tokens. The verified agent also submits
+fewer proposals (2,478 against 2,592), part of the gain being claims withdrawn rather than
+repaired, which is the intended behaviour.
 
-**They do not act on accuracy at all.** Verification moves MRR by 0.0004 (paired bootstrap over
-diseases, *p* = 0.70) and Hit@20 by 0.005 (*p* = 0.70). The closed-book agent — the least
-faithful system by every measure — ranks *better* than both grounded configurations on MRR
-(0.016 against 0.010), though not significantly so (*p* = 0.41). And no LLM configuration
-reaches the popularity baseline: ranking drugs by how many indications they already have scores
-MRR 0.029 and Hit@20 0.085, against the verified agent's 0.010 and 0.045, a difference that is
-significant on MRR (*p* = 0.014; on Hit@20, *p* = 0.138).
+**On the other model, the same intervention makes fabrication worse.** With `llama3.1-8b`,
+grounding takes the fabricated-edge rate *up*, from 0.289 closed book to 0.944 with the full tool
+set, and verification barely moves it (0.902). The mechanism is visible in the traces. Over 200
+diseases `llama3.1-8b` called `find_mechanism_paths` eleven times, against `qwen2.5-7b`'s 2,645.
+Instead of asking for a path it reused identifiers it had already seen — mostly from
+`rank_candidate_drugs`, which returns *drugs* — and presented them as targets. Of the nodes it
+named as a drug's target, 688 were drugs, 172 were genes and 11 were anatomical structures; among
+the most frequent was `kg:12345`, a round number of exactly the kind that produced its
+counterpart's invented `PMID12345`. Its paths are then malformed in 82.5% of proposals, usually
+for having no gene on them at all.
 
-This decoupling is the central empirical result. A paper reporting only faithfulness would
-conclude that verification works; one reporting only ranking would conclude that none of this
-helps and that a frequency heuristic wins. Both are true of the same runs, which is why we argue
-a repurposing benchmark has to measure both.
+That inversion is the result we would not have had from one model. **Grounding does not make a
+model truthful; it changes the shape of its errors.** Identifiers let a model state claims whose
+endpoints resolve, so a claim moves out of "unresolvable" and into "checkable" — and whether it
+lands on "supported" or "fabricated" is a property of the model, not of the tooling. For
+`qwen2.5-7b` the claims became checkable and largely true; for `llama3.1-8b` they became checkable
+and false. A benchmark that reported only the unresolvable rate would have called the second
+model's grounded configuration its best (0.002 against 0.552 closed book).
 
-**The agent ignores the literature.** Across 200 diseases the unverified configuration called
-`search_pubmed` once and made 2,496 `find_mechanism_paths` calls; the verified one called it once
-against 2,645. The unverified agent nevertheless attached 20 PubMed identifiers to its proposals,
+**Neither model's faithfulness buys accuracy.** For `qwen2.5-7b`, verification moves MRR by
+0.0004 (paired bootstrap over diseases, *p* = 0.70) and Hit@20 by 0.005 (*p* = 0.70); for
+`llama3.1-8b`, by 0.0004 (*p* = 0.60) and 0.000 (*p* = 1.00). In both models the closed-book
+agent — the least verifiable configuration — ranks at least as well as the grounded ones: for
+`qwen2.5-7b` the difference is not significant (*p* = 0.41), for `llama3.1-8b` it is (0.020
+against 0.006, *p* = 0.048). And no LLM
+configuration of either model reaches the popularity baseline. Against `qwen2.5-7b`'s verified
+agent, ranking drugs by how many indications they already have scores MRR 0.029 and Hit@20 0.085
+against 0.010 and 0.045, significant on MRR (*p* = 0.014) though not on Hit@20 (*p* = 0.138);
+against `llama3.1-8b`'s, popularity is better on both at *p* = 0.002.
+
+This decoupling is the central empirical result, and it now holds across two models. A paper
+reporting only faithfulness would conclude that verification works; one reporting only ranking
+would conclude that none of this helps and that a frequency heuristic wins. Both are true of the
+same runs, which is why we argue a repurposing benchmark has to measure both.
+
+**Coverage is part of the comparison.** `llama3.1-8b` returned no ranking at all for 37% of
+diseases (coverage 0.62–0.63, against 0.91–0.93 for `qwen2.5-7b` and 0.96–1.00 for the
+closed-book and baseline systems). Unanswered diseases score zero rather than being dropped, so
+this is counted against it rather than hidden.
+
+**The agent ignores the literature.** Across 200 diseases `qwen2.5-7b`'s unverified
+configuration called `search_pubmed` once and made 2,496 `find_mechanism_paths` calls; the
+verified one called it once against 2,645. The unverified agent nevertheless attached 20 PubMed
+identifiers to its proposals,
 drawn from just two invented placeholders (`PMID12345`, `PMID67890`); all 20 failed resolution or
 the date check, and none of its citations was admissible. The honest reading is not that
 fabricated citations are frequent here — 20 across 2,592 proposals is rare — but that an agent
@@ -501,10 +546,11 @@ effect roughly threefold and made rare behaviour look routine. We report this be
 faithfulness is often measured on a handful of hand-picked cases, and a twelve-disease sample was
 enough to be wrong by a factor of three in the direction that favours the method under test.
 
-**A caveat on the absolute verified rate.** With a path-enumeration tool available, the agent
-largely submits paths the tool returned, so verification of what it keeps is close to automatic;
-95.8% verified says more about the tool than about the model. The informative quantities are the
-differences between configurations.
+**A caveat on the absolute verified rate.** With a path-enumeration tool available, an agent
+that uses it largely submits paths the tool returned, so verification of what it keeps is close
+to automatic; `qwen2.5-7b`'s 95.8% says as much about the tool as about the model, and
+`llama3.1-8b`'s 3.0% says that it did not use the tool. The informative quantities are the
+differences between configurations and between models, not the absolute rate.
 
 Stratifying to pairs that reached phase 3 or beyond (115 diseases) leaves the picture intact and
 the LLM systems weaker still: the grounded configurations recover a single positive each in
@@ -513,44 +559,58 @@ their top 20 against popularity's eleven (`runs/report_full_phase3/`). Probe-mas
 
 ### 7.4 Weight-level leakage
 
-| Item | n | Said yes | Flagged as post-cutoff knowledge |
-|---|---|---|---|
-| Ground-truth positives | 565 | 0.117 | **0.021** |
-| Pairs known at the cutoff (positive control) | 200 | 0.310 | 0.050 |
-| Random unrelated pairs (negative control) | 200 | 0.025 | 0.000 |
+| Model | Item | n | Said yes | Flagged as post-cutoff knowledge |
+|---|---|---|---|---|
+| qwen2.5-7b | Ground-truth positives | 565 | 0.117 | **0.021** |
+| qwen2.5-7b | Known at the cutoff (positive control) | 200 | 0.310 | 0.050 |
+| qwen2.5-7b | Random pairs (negative control) | 200 | 0.025 | 0.000 |
+| llama3.1-8b | Ground-truth positives | 565 | 0.432 | **0.007** |
+| llama3.1-8b | Known at the cutoff (positive control) | 200 | 0.565 | 0.000 |
+| llama3.1-8b | Random pairs (negative control) | 201 | 0.134 | 0.005 |
 
-**Table 4.** Closed-book probe of `qwen2.5:7b`, 965 items.
+**Table 5.** Closed-book probe, 965 items per model.
 
 The model is asked, with no tools, whether each pair has reached a phase 2+ trial or approval and
 since when; a claim carrying a post-cutoff year, or no year, is flagged.
 
 The controls carry the inference. The yes-rate gap between pairs known at the cutoff and random
-pairs is 0.285, so the probe discriminates rather than defaulting to "no". Because the positive
-controls were already established before the cutoff, their 0.050 flag rate is the probe
-mistaking a confabulated date for knowledge — a false-positive floor. The positives' flag rate,
-0.021, lies *below* that floor: this probe finds no leakage signal above its own noise.
+pairs is 0.285 for `qwen2.5-7b` and 0.431 for `llama3.1-8b`, so in both cases the probe
+discriminates rather than defaulting to "no". Because the positive controls were already
+established before the cutoff, their flag rate is the probe mistaking a confabulated date for
+knowledge — a false-positive floor. For `qwen2.5-7b` that floor is 0.050 and the positives sit
+*below* it at 0.021. For `llama3.1-8b` the positives are flagged at 0.007 against a floor of
+0.005 from the negative controls: four pairs of 565, which is noise at this sample size. Neither
+model shows a leakage signal above the probe's own.
 
-The 66 positives the model did claim are more informative still: **none** carried a post-2021
+The 66 positives `qwen2.5-7b` claimed are more informative still: **none** carried a post-2021
 year. Fifty-four were dated before the cutoff (1957–2014) — the model believing a pair was long
 established, which is confabulation rather than leaked knowledge — and the remaining 12 carried
 no year, which is the only reason they are flagged. Masking those 12 leaves 553 pairs over 199
 diseases and barely moves the baselines (Section 7.2).
 
-We state the limit plainly: the probe recalls only 31.0% of pairs genuinely known at the cutoff,
-so its flag rate is a lower bound and the masked evaluation is a sanity check, not a guarantee. A
-model with a later cutoff must be probed before its scores are interpreted; the probe writes a
-per-model report for that purpose.
+`llama3.1-8b` says yes far more readily — to 43.2% of positives and 13.4% of random pairs,
+against 11.7% and 2.5% — so its answers carry less information per item even though its control
+gap is wider. That difference is itself a reason to probe each model rather than assume a rate
+measured on one transfers.
+
+We state the limit plainly: the probe recalls only 31.0% and 56.5% of pairs genuinely known at
+the cutoff, so its flag rate is a lower bound and the masked evaluation is a sanity check, not a
+guarantee. A model with a later cutoff must be probed before its scores are interpreted; the
+probe writes a per-model report for that purpose.
 
 ### 7.5 Cost
 
-| System | Input tokens | Output tokens | Correct hits | Tokens per correct hit |
-|---|---|---|---|---|
-| closed book | 85,925 | 502,397 | 13 | **45,256** |
-| RAG, no verifier | 11,677,655 | 590,537 | 8 | 1,533,524 |
-| RAG + verify-revise | 12,735,285 | 701,714 | 9 | 1,493,000 |
-| Popularity | 0 | 0 | 17 | 0 |
+| Model | System | Input tokens | Output tokens | Correct hits | Tokens per correct hit |
+|---|---|---|---|---|---|
+| qwen2.5-7b | closed book | 85,925 | 502,397 | 13 | **45,256** |
+| qwen2.5-7b | RAG, no verifier | 11,677,655 | 590,537 | 8 | 1,533,524 |
+| qwen2.5-7b | RAG + verify-revise | 12,735,285 | 701,714 | 9 | 1,493,000 |
+| llama3.1-8b | closed book | 83,162 | 617,479 | 11 | 63,695 |
+| llama3.1-8b | RAG, no verifier | 1,884,196 | 520,375 | 4 | 601,143 |
+| llama3.1-8b | RAG + verify-revise | 3,472,891 | 654,970 | 4 | 1,031,965 |
+| — | Popularity | 0 | 0 | 17 | 0 |
 
-**Table 6.** Cost over 200 diseases. Hits are positives recovered in a top-20 list.
+**Table 7.** Cost over 200 diseases. Hits are positives recovered in a top-20 list.
 
 Tool use dominates the bill: the grounded configurations read roughly 136 times as many input
 tokens as the closed-book agent, because every path enumeration and candidate screen returns to
@@ -561,11 +621,18 @@ more positives, and the popularity baseline costs nothing at all and recovers mo
 deciding whether to deploy an agentic pipeline for *candidate generation*, as opposed to
 candidate *justification*, should weigh that directly.
 
-On one RTX 4060 (8 GB) with a 7B model served locally, a disease takes 96.6 s under verification,
-65.3 s without it and 50.5 s closed book; the three runs over 200 diseases took 11 h 49 min in
-total with no failed requests. Single-worker execution is not a limitation of the hardware but of
-the server: four concurrent turns against one instance stalled, and one worker was also faster
-per disease.
+The ordering is the same for `llama3.1-8b` and the gap is wider: its closed-book agent recovers
+eleven positives at 63,695 tokens each, its verified agent four at 1,031,965. Across both models
+the pattern is that the cheapest configuration recovers the most, and the free baseline recovers
+more than any of them.
+
+On one RTX 4060 (8 GB) with these models served locally, a `qwen2.5-7b` disease takes 96.6 s
+under verification, 65.3 s without it and 50.5 s closed book; `llama3.1-8b` takes 134 s, 228 s
+and 177 s. Decoding dominates: the systems differ by two orders of magnitude in input tokens but
+only by a factor of three in wall-clock, because every configuration generates two to three
+thousand tokens per disease and a 7–8B model on this hardware decodes at tens of tokens per
+second. Single-worker execution is not a limitation of the hardware but of the server: four
+concurrent turns against one instance stalled, and one worker was also faster per disease.
 
 ### 7.6 How much does a "verified mechanism" mean?
 
@@ -597,8 +664,19 @@ targets for that drug. Split by the role PrimeKG assigns the edge:
 | transporter | 61 | **0.000** |
 | carrier | 54 | **0.000** |
 
-**Table 7.** ChEMBL mechanism-of-action confirmation by KG edge role, verified proposals of the
-full system (the unverified system gives 0.541 / 0.000 / 0.000 / 0.000 on 1,705 edges).
+**Table 8.** ChEMBL mechanism-of-action confirmation by KG edge role, verified proposals of
+`qwen2.5-7b`'s full system (its unverified system gives 0.541 / 0.000 / 0.000 / 0.000 on 1,705
+edges).
+
+For `llama3.1-8b` the same check is possible only on a handful of edges, because so few of its
+proposals verify: 29 drug–gene edges from the full system, of which ChEMBL has an opinion on 6,
+confirming 1. Its *closed-book* configuration is the interesting case — 27 edges, all 27 drugs
+mapped to ChEMBL, 13 with a recorded mechanism, and **0.846 of those confirmed**, against
+`qwen2.5-7b`'s 0.535 on target-role edges. Reading that as "the ungrounded agent is more
+accurate about mechanism" would be a mistake at n = 13; the simpler explanation is that a model
+answering from memory names well-known drugs with well-known mechanisms, which is exactly the
+subset ChEMBL curates, while a tool-grounded agent is handed DrugBank interaction partners that
+are often not the therapeutic target.
 
 ![Edges by graph role and their independent confirmation](figures/fig3_moa_by_role.png)
 
@@ -620,14 +698,18 @@ A reader should not read "verified" as "pharmacologically the mechanism".
 **Post-cutoff literature.** For each system's top-5 proposals we asked whether any PubMed record
 published after the cutoff co-mentions the drug and the disease.
 
-| System | Pairs | Co-mention | Random control | Degree-matched control | Lift vs matched |
-|---|---|---|---|---|---|
-| closed book | 955 | 0.308 | 0.034 | 0.063 | **+0.245** |
-| RAG, no verifier | 893 | 0.078 | 0.021 | 0.038 | **+0.040** |
-| RAG + verify-revise | 888 | 0.083 | 0.036 | 0.046 | **+0.037** |
+| Model | System | Pairs | Co-mention | Random control | Degree-matched | Lift vs matched |
+|---|---|---|---|---|---|---|
+| qwen2.5-7b | closed book | 955 | 0.308 | 0.034 | 0.063 | **+0.245** |
+| qwen2.5-7b | RAG, no verifier | 893 | 0.078 | 0.021 | 0.038 | **+0.040** |
+| qwen2.5-7b | RAG + verify-revise | 888 | 0.083 | 0.036 | 0.046 | **+0.037** |
+| llama3.1-8b | closed book | 957 | 0.278 | 0.034 | 0.065 | **+0.213** |
+| llama3.1-8b | RAG, no verifier | 394 | 0.089 | 0.040 | 0.030 | **+0.058** |
+| llama3.1-8b | RAG + verify-revise | 399 | 0.090 | 0.041 | 0.045 | **+0.045** |
 
-**Table 8.** Post-cutoff co-mention. The matched control pairs each proposed drug with another of
-comparable knowledge-graph degree for the same disease.
+**Table 9.** Post-cutoff co-mention. The matched control pairs each proposed drug with another of
+comparable knowledge-graph degree for the same disease. The two models agree closely, which is
+some reassurance that this measure reflects the proposals rather than the model.
 
 The control matters more than the headline here. Against randomly drawn drugs, the closed-book
 agent looks strongly corroborated — 0.308 against 0.034, an eight-fold lift. Its examples are
@@ -663,14 +745,24 @@ knowledge base. What it does *not* do is make the agent find more true repurposi
 and we would caution against the inference — easy to make from a faithfulness table alone — that
 a more faithful agent is a more useful one.
 
-**Faithfulness and accuracy are decoupled, and that is a reason to measure both.** In our runs
-the least faithful configuration ranked best among the LLM systems, and the most faithful one
-was significantly worse than ranking drugs by their existing indication count. We do not read
-this as evidence that grounding harms accuracy: the closed-book advantage is not significant, and
-the mechanism path requirement plausibly constrains the grounded agents toward candidates the
-graph can justify, which is a narrower set than the clinically interesting one — the 59.3%
-reachability ceiling (Section 3.4) bounds that explicitly. We read it as evidence that reporting
-either quantity alone invites a conclusion the other contradicts.
+**Faithfulness and accuracy are decoupled, and that is a reason to measure both.** In both
+models the least verifiable configuration ranked best among the LLM systems, and neither
+model's most faithful configuration came close to ranking drugs by their existing indication
+count. The mechanism path requirement plausibly constrains the grounded agents toward candidates
+the graph can justify, which is a narrower set than the clinically interesting one — the 59.3%
+reachability ceiling (Section 3.4) bounds that explicitly. We read the pattern as evidence that
+reporting either quantity alone invites a conclusion the other contradicts.
+
+**What grounding does to fabrication is a property of the model, not of the tooling.** This is
+the finding we could not have had from one model, and it reverses sign between them: the same
+tools took `qwen2.5-7b` from 0.211 fabricated edges to 0.046, and `llama3.1-8b` from 0.289 to
+0.944. Identifiers do not make claims true, they make claims *checkable*; a model that queries
+for a path produces checkable claims that hold, and a model that recycles identifiers it has
+already seen produces checkable claims that do not. The practical consequence for anyone
+building such a system is that the gain from grounding has to be measured on the model being
+deployed, and the measurement has to distinguish unresolvable from fabricated, because the two
+move in opposite directions here. A single-model result about retrieval-augmented faithfulness
+should be read as a fact about that model.
 
 **A popularity baseline belongs in every repurposing evaluation.** Ranking by indication count
 beat two structural methods, three LLM configurations, and a knowledge-graph embedding, on a
@@ -709,11 +801,20 @@ knowledge base that cannot express the mechanism for two of every five positives
 * Grounding is bounded by the vocabulary: informal receptor names and most biological processes
   have no node, which is why *unresolvable* is reported separately rather than folded into
   fabrication.
-* The LLM results come from one open-weight 7B model. The decoupling of faithfulness and
-  accuracy, and the failure to beat a popularity baseline, may not hold for a larger or
-  differently trained model; we report the harness and the split so that claim can be tested
-  rather than argued. A late-cutoff hosted model should be probed (Section 7.4) before its
-  scores are compared with these.
+* The LLM results come from two open-weight models of the same size class. The decoupling of
+  faithfulness and accuracy and the failure to beat a popularity baseline hold in both, but a
+  larger or differently trained model may behave differently again — the sign reversal in what
+  grounding does to fabrication is itself the warning. We report the harness and the split so
+  the claim can be tested rather than argued. A late-cutoff hosted model should be probed
+  (Section 7.4) before its scores are compared with these.
+* The ChEMBL check on `llama3.1-8b` rests on 6 and 13 edges with a curated opinion. We report
+  the counts beside the rates and draw no conclusion from the difference between models on this
+  measure.
+* Sixteen of the 200 diseases in one `llama3.1-8b` run were processed twice by two concurrent
+  copies of the driver, and the two runs returned different proposal counts for them. The
+  duplicates were collapsed to one record per disease, keeping the clean copy, but it is a
+  reminder that these runs are not deterministic: the same model and prompt can return different
+  proposals on a second pass.
 * Ranking differences among the LLM systems are small relative to their confidence intervals, so
   the ordering within that group should not be over-read. The comparison that is significant is
   popularity against the verified agent on MRR (*p* = 0.014).

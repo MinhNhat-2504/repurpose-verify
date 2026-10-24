@@ -22,13 +22,17 @@ import pandas as pd  # noqa: E402
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "paper" / "figures"
 FULL = ROOT / "runs" / "report_full" / "summary.csv"
+SECOND = ROOT / "runs" / "report_llama31-8b" / "summary.csv"
 EXTERNAL = [ROOT / "runs" / "report_external" / "moa.json",
             ROOT / "runs" / "report_external" / "literature.json"]
 
 LABELS = {
-    "qwen25-7b__closed_book": "closed book",
-    "qwen25-7b__rag_verify-none": "RAG, no verifier",
-    "qwen25-7b__rag_verify-revise": "RAG + verify",
+    "qwen25-7b__closed_book": "qwen closed book",
+    "qwen25-7b__rag_verify-none": "qwen RAG",
+    "qwen25-7b__rag_verify-revise": "qwen RAG + verify",
+    "llama31-8b__closed_book": "llama closed book",
+    "llama31-8b__rag_verify-none": "llama RAG",
+    "llama31-8b__rag_verify-revise": "llama RAG + verify",
     "popularity": "popularity",
     "proximity": "proximity",
     "complex": "ComplEx",
@@ -38,6 +42,9 @@ COLOURS = {
     "qwen25-7b__closed_book": "#c2410c",
     "qwen25-7b__rag_verify-none": "#b45309",
     "qwen25-7b__rag_verify-revise": "#15803d",
+    "llama31-8b__closed_book": "#9a3412",
+    "llama31-8b__rag_verify-none": "#7c2d12",
+    "llama31-8b__rag_verify-revise": "#166534",
     "popularity": "#525252",
     "proximity": "#737373",
     "complex": "#a3a3a3",
@@ -61,8 +68,11 @@ def save(fig: plt.Figure, name: str) -> None:
 # offsets collide, and an overlapping label is worse than no figure.
 LABEL_OFFSETS = {
     "qwen25-7b__closed_book": (-10, 10, "right"),
-    "qwen25-7b__rag_verify-none": (9, -12, "left"),
+    "qwen25-7b__rag_verify-none": (9, -13, "left"),
     "qwen25-7b__rag_verify-revise": (9, 7, "left"),
+    "llama31-8b__closed_book": (-10, 8, "right"),
+    "llama31-8b__rag_verify-none": (-9, -14, "right"),
+    "llama31-8b__rag_verify-revise": (-9, 6, "right"),
     "popularity": (9, 0, "left"),
     "proximity": (9, 2, "left"),
     "complex": (9, -3, "left"),
@@ -75,9 +85,9 @@ def fig_faithfulness_vs_accuracy(full: pd.DataFrame) -> None:
     # The baselines emit no mechanism at all, so they have no fabrication rate. They are drawn
     # in a banded strip left of the axis break, never at x = 0, which would read as "never
     # fabricates" rather than "makes no checkable claim".
-    band = -0.026
-    ax.axvspan(band - 0.011, band + 0.011, color="#f5f5f4", zorder=0)
-    ax.axvline(band + 0.014, color="#d4d4d4", linestyle=(0, (3, 3)), linewidth=0.9, zorder=1)
+    band = -0.048
+    ax.axvspan(band - 0.022, band + 0.022, color="#f5f5f4", zorder=0)
+    ax.axvline(band + 0.028, color="#d4d4d4", linestyle=(0, (3, 3)), linewidth=0.9, zorder=1)
     ax.text(band, 0.0012, "no mechanism\nemitted", ha="center", va="bottom", fontsize=7.5,
             color="#8a8a8a", linespacing=1.2)
     for system, row in full.iterrows():
@@ -94,45 +104,65 @@ def fig_faithfulness_vs_accuracy(full: pd.DataFrame) -> None:
     ax.set_xlabel("fabricated mechanism edges  (lower is better)")
     ax.set_ylabel("MRR  (higher is better)")
     ax.set_title("Faithfulness and accuracy do not move together")
-    ax.set_xlim(-0.044, 0.26)
     ax.set_ylim(0, 0.035)
-    ax.set_xticks([0.0, 0.05, 0.10, 0.15, 0.20])
+    ax.set_xlim(-0.08, 1.02)
+    ax.set_ylim(0, 0.035)
+    ax.set_xticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
     ax.grid(axis="y", color="#e5e5e5", linewidth=0.6, zorder=0)
     save(fig, "fig1_faithfulness_vs_accuracy")
 
 
 def fig_verification_effect(full: pd.DataFrame) -> None:
-    """What verification changes, and what it leaves alone."""
-    systems = ["qwen25-7b__closed_book", "qwen25-7b__rag_verify-none",
-               "qwen25-7b__rag_verify-revise"]
-    systems = [s for s in systems if s in full.index]
+    """What grounding and verification change, for each model, and what they leave alone."""
+    groups = [("qwen2.5-7b", ["qwen25-7b__closed_book", "qwen25-7b__rag_verify-none",
+                              "qwen25-7b__rag_verify-revise"]),
+              ("llama3.1-8b", ["llama31-8b__closed_book", "llama31-8b__rag_verify-none",
+                               "llama31-8b__rag_verify-revise"])]
+    groups = [(m, [s for s in ss if s in full.index]) for m, ss in groups]
+    groups = [(m, ss) for m, ss in groups if ss]
     panels = [("fabricated_edge_rate", "fabricated edges"),
               ("unresolvable_edge_rate", "unresolvable endpoints"),
               ("hit@20", "Hit@20")]
+    short = {"closed_book": "closed\nbook", "rag_verify-none": "RAG", "rag_verify-revise": "RAG\n+ver"}
     # The popularity baseline belongs on the ranking panel, and the panel has to be scaled to
     # show it: drawn above an axis limit set from the systems alone, the single most important
     # comparison in the paper would sit outside the frame.
     reference = full.loc["popularity", "hit@20"] if "popularity" in full.index else None
-    fig, axes = plt.subplots(1, 3, figsize=(7.4, 2.7))
+    fig, axes = plt.subplots(1, 3, figsize=(8.6, 3.0))
     for ax, (col, title) in zip(axes, panels):
-        values = [full.loc[s, col] for s in systems]
+        xs, values, colours, ticks = [], [], [], []
+        x = 0.0
+        for gi, (model, systems) in enumerate(groups):
+            for s in systems:
+                xs.append(x)
+                values.append(full.loc[s, col])
+                colours.append(COLOURS[s])
+                ticks.append(short.get(s.split("__")[1], s))
+                x += 1
+            if gi == 0:
+                x += 0.8          # a gap, so the two models read as two groups
         ceiling = max(values + ([reference] if col == "hit@20" and reference else []))
-        ax.bar(range(len(systems)), values,
-               color=[COLOURS[s] for s in systems], width=0.62, zorder=3)
-        for i, v in enumerate(values):
-            ax.text(i, v, f"{v:.3f}", ha="center", va="bottom", fontsize=8)
-        ax.set_xticks(range(len(systems)))
-        ax.set_xticklabels([LABELS[s].replace(", ", ",\n").replace(" + ", " +\n")
-                            for s in systems], fontsize=8)
-        ax.set_title(title)
-        ax.set_ylim(0, ceiling * 1.32 if ceiling > 0 else 1)
+        ax.bar(xs, values, color=colours, width=0.72, zorder=3)
+        for xv, v in zip(xs, values):
+            ax.text(xv, v, f"{v:.3f}", ha="center", va="bottom", fontsize=7)
+        ax.set_xticks(xs)
+        ax.set_xticklabels(ticks, fontsize=7)
+        ax.set_title(title, fontsize=9)
+        ax.set_ylim(0, ceiling * 1.34 if ceiling > 0 else 1)
         ax.grid(axis="y", color="#e5e5e5", linewidth=0.6, zorder=0)
+        if len(groups) == 2:
+            mid = (xs[2] + xs[3]) / 2
+            ax.axvline(mid, color="#e5e5e5", linewidth=0.8, zorder=1)
+            ax.text(xs[1], -ceiling * 0.30, groups[0][0], ha="center", fontsize=7.5,
+                    color="#525252")
+            ax.text(xs[4], -ceiling * 0.30, groups[1][0], ha="center", fontsize=7.5,
+                    color="#525252")
     if reference:
         axes[2].axhline(reference, color="#525252", linestyle="--", linewidth=1.2, zorder=4)
-        axes[2].text(len(systems) - 0.72, reference * 1.03,
-                     f"popularity baseline  {reference:.3f}",
-                     va="bottom", ha="right", fontsize=8, color="#525252")
-    fig.suptitle("Verification moves faithfulness, not ranking", y=1.04, fontsize=10)
+        axes[2].text(xs[-1] + 0.4, reference * 1.03, f"popularity {reference:.3f}",
+                     va="bottom", ha="right", fontsize=7.5, color="#525252")
+    fig.suptitle("Grounding moves fabrication in opposite directions; ranking moves in neither",
+                 y=1.03, fontsize=10)
     save(fig, "fig2_verification_effect")
 
 
@@ -178,6 +208,9 @@ def main() -> int:
         print(f"missing {FULL.relative_to(ROOT)} - run the evaluation first")
         return 2
     full = pd.read_csv(FULL).set_index("system")
+    if SECOND.exists():
+        second = pd.read_csv(SECOND).set_index("system")
+        full = pd.concat([full, second[~second.index.isin(full.index)]])
     ext: dict = {}
     for path in EXTERNAL:
         if path.exists():

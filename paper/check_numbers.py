@@ -29,6 +29,13 @@ SUMMARIES = {
     "masked": ROOT / "runs" / "report_masked" / "summary.csv",
     "phase3": ROOT / "runs" / "report_full_phase3" / "summary.csv",
 }
+# The second model, reported alongside the primary one throughout Section 7.
+SECOND = ROOT / "runs" / "report_llama31-8b" / "summary.csv"
+SECOND_COMPARISONS = ROOT / "runs" / "report_llama31-8b" / "comparisons.csv"
+SECOND_PROBE = ROOT / "runs" / "probes" / "llama31-8b.jsonl"
+SECOND_EXTERNAL = ROOT / "runs" / "report_external_llama31-8b" / "report.json"
+SECOND_SYSTEMS = ("llama31-8b__closed_book", "llama31-8b__rag_verify-none",
+                  "llama31-8b__rag_verify-revise")
 COMPARISONS = ROOT / "runs" / "report_full" / "comparisons.csv"
 STRICT = ROOT / "runs" / "report_strict" / "summary.csv"
 EXTERNAL = [ROOT / "runs" / "report_external" / "moa.json",
@@ -104,7 +111,6 @@ def collect_claims() -> list[tuple[str, str, str]]:
         ]
     rev, nov, cb = (full.loc[SYSTEMS[2]], full.loc[SYSTEMS[1]], full.loc[SYSTEMS[0]])
     claims += [
-        ("total proposals", f"{int(full.loc[list(SYSTEMS), 'proposals'].sum()):,}", src),
         ("fabricated reduction factor",
          f"{nov['fabricated_edge_rate'] / rev['fabricated_edge_rate']:.1f}-fold", src),
         ("verification token overhead",
@@ -214,6 +220,62 @@ def collect_claims() -> list[tuple[str, str, str]]:
                         (f"{system} lift vs matched",
                          f"+{lit['lift_over_matched_control']:.3f}", src),
                     ]
+
+    # Section 7: the second model, reported in the same tables.
+    if SECOND.exists():
+        second = pd.read_csv(SECOND).set_index("system")
+        src = "report_llama31-8b/summary.csv"
+        for system in SECOND_SYSTEMS:
+            if system not in second.index:
+                continue
+            row = second.loc[system]
+            claims += [
+                (f"{system} proposals", f"{int(row['proposals']):,}", src),
+                (f"{system} verified", _fmt(row["verified_rate"], 3), src),
+                (f"{system} fabricated", _fmt(row["fabricated_edge_rate"], 3), src),
+                (f"{system} unresolvable", _fmt(row["unresolvable_edge_rate"], 3), src),
+                (f"{system} malformed", _fmt(row["malformed_path_rate"], 3), src),
+                (f"{system} MRR", _fmt(row["mrr"], 3), src),
+                (f"{system} Hit@20", _fmt(row["hit@20"], 3), src),
+                (f"{system} coverage", _fmt(row["coverage"], 3), src),
+                (f"{system} correct hits", str(int(row["correct_hits"])), src),
+                (f"{system} input tokens", f"{int(row['input_tokens']):,}", src),
+                (f"{system} output tokens", f"{int(row['output_tokens']):,}", src),
+                (f"{system} tokens per hit", f"{int(round(row['tokens_per_correct_hit'])):,}", src),
+            ]
+        both = pd.concat([pd.read_csv(SUMMARIES["full"]), pd.read_csv(SECOND)])
+        llm = both[both.system.str.contains("__")]
+        claims.append(("total proposals across both models",
+                       f"{int(llm.proposals.sum()):,}", src))
+
+    if SECOND_COMPARISONS.exists():
+        cmp2 = {(r["system"], r["metric"]): r
+                for _, r in pd.read_csv(SECOND_COMPARISONS).iterrows()}
+        src = "report_llama31-8b/comparisons.csv"
+        for key, label in (((SECOND_SYSTEMS[1], "mrr"), "second model verification p"),
+                           ((SECOND_SYSTEMS[0], "mrr"), "second model closed book p"),
+                           (("popularity", "mrr"), "second model popularity MRR p"),
+                           (("popularity", "hit@20"), "second model popularity Hit@20 p")):
+            if key in cmp2:
+                # p-values for the two large, non-significant comparisons are quoted to two
+                # decimals in the text, as for the primary model; the significant ones to three.
+                digits = 2 if "popularity" not in label else 3
+                claims.append((label, _fmt(cmp2[key]["p"], digits), src))
+
+    if SECOND_PROBE.exists():
+        rows2 = [json.loads(l) for l in SECOND_PROBE.read_text(encoding="utf-8").splitlines() if l]
+        src = SECOND_PROBE.name
+        for kind in ("target", "positive_control", "negative_control"):
+            rs = [r for r in rows2 if r["kind"] == kind]
+            if not rs:
+                continue
+            claims += [
+                (f"second probe {kind} n", str(len(rs)), src),
+                (f"second probe {kind} said yes",
+                 _fmt(sum(r["answer"] == "yes" for r in rs) / len(rs), 3), src),
+                (f"second probe {kind} flagged",
+                 _fmt(sum(r["model_knows"] for r in rs) / len(rs), 3), src),
+            ]
 
     rows = [json.loads(line) for line in PROBE.read_text(encoding="utf-8").splitlines() if line]
     kinds = {k: [r for r in rows if r["kind"] == k] for k in
