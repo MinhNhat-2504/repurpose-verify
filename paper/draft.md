@@ -850,7 +850,7 @@ with their full verification records, and the generated reports will be deposite
 A `reverify` command re-scores saved proposals with an updated verifier without re-running any
 model, which is how the revised taxonomy in Section 4.3 was applied to runs already completed.
 `paper/check_numbers.py` re-derives every number quoted in this manuscript from those artefacts
-and fails if the text disagrees. The test suite comprises 55 tests over a synthetic graph and a
+and fails if the text disagrees. The test suite comprises 58 tests over a synthetic graph and a
 mock model and requires no network access.
 
 ### Source versions
@@ -951,19 +951,39 @@ responsibility for the content.
 
 ```bash
 pip install -e ".[all]"
-python -m repurpose_verify download all      # PrimeKG parts, MONDO, HGNC
+
+# Data: the graph, the vocabularies used for grounding, and the time-split ground truth.
+python -m repurpose_verify download all          # PrimeKG parts, MONDO, HGNC
 python -m repurpose_verify build-kg
 python -m repurpose_verify build-gt
+python -m repurpose_verify audit-mapping -n 200  # worksheet for the entity-mapping audit
+python -m repurpose_verify fda-approvals         # candidate new-indication approvals
+
+# Knowledge-graph baselines.
 python -m repurpose_verify baseline popularity
 python -m repurpose_verify baseline proximity
 python -m repurpose_verify baseline complex --epochs 5
-python -m repurpose_verify agent --model qwen25-7b --mode closed_book
-python -m repurpose_verify agent --model qwen25-7b --verifier none
-python -m repurpose_verify agent --model qwen25-7b --verifier revise
-python -m repurpose_verify probe --model qwen25-7b
-python -m repurpose_verify evaluate --reference qwen25-7b__rag_verify-revise
-python -m repurpose_verify evaluate --probe runs/probes/qwen25-7b.jsonl --out runs/report_masked
+
+# Each model: probe first, then the three systems, then the reports. run_full.sh does this
+# sequentially with retries and namespaces the reports per model.
+for MODEL in qwen25-7b llama31-8b; do
+  python -m repurpose_verify probe --model $MODEL
+  MODEL=$MODEL bash scripts/run_full.sh
+  python -m repurpose_verify validate all     --runs runs/${MODEL}__rag_verify-revise runs/${MODEL}__rag_verify-none            runs/${MODEL}__closed_book     --out runs/report_external_${MODEL}/report.md
+done
+
+# Role sensitivity of "verified" (Section 7.6), re-scored without any model inference.
+python -m repurpose_verify --config configs/strict.toml reverify   runs/qwen25-7b__rag_verify-revise runs/qwen25-7b__rag_verify-none   runs/qwen25-7b__closed_book --suffix _strict
+python -m repurpose_verify evaluate --runs runs/qwen25-7b__*revise runs/qwen25-7b__*revise_strict   runs/qwen25-7b__*none runs/qwen25-7b__*none_strict --out runs/report_strict
+
+# Both models together, and the manuscript's own checks.
+python -m repurpose_verify evaluate --runs runs/qwen25-7b__* runs/llama31-8b__*   runs/popularity runs/proximity runs/complex --out runs/report_two_models
+python paper/check_numbers.py
+python paper/make_figures.py
 ```
+
+Every external response is cached under `data/cache/`, so a second run of any of these reads the
+archived evidence rather than the live services, and reproduces the reported numbers exactly.
 
 ## Appendix B Prompts
 
