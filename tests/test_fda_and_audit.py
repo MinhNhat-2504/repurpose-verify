@@ -164,3 +164,42 @@ def test_score_mapping_audit(tmp_path):
     assert out["drug"]["precision"] == 2 / 3
     assert out["drug"]["ci_low"] <= 2 / 3 <= out["drug"]["ci_high"]
     assert out["disease"]["mapped"] == 2 and out["disease"]["precision"] == 1.0
+
+
+def test_stable_sample_barely_moves_when_the_pool_changes():
+    """Positional sampling reshuffled 129 of 200 evaluation diseases over an 18-disease change."""
+    from repurpose_verify.data.groundtruth import stable_sample
+
+    pool = list(range(1000, 2149))
+    pick = lambda keys: {keys[i] for i in stable_sample(keys, 200, 13)}
+    before = pick(pool)
+    # Drop 18 diseases from the middle of the pool, as a mapping fix does.
+    after = pick([k for k in pool if k not in set(range(1400, 1418))])
+    assert len(before) == len(after) == 200
+    # Only the dropped members and their replacements may move.
+    assert len(before - after) <= 18, f"{len(before - after)} diseases changed"
+
+
+def test_pinned_split_wins_over_sampling(tmp_path):
+    from repurpose_verify.data.groundtruth import load_eval_split
+
+    assert load_eval_split(None) == (None, [])
+    assert load_eval_split(tmp_path / "absent.csv") == (None, [])
+    path = tmp_path / "split.csv"
+    path.write_text("disease_idx\n7\n9\n", encoding="utf-8")
+    assert load_eval_split(path)[0] == {7, 9}
+
+
+def test_propose_disease_strips_what_no_ontology_label_carries(kg):
+    """The letter's clause is a sentence; the ontology term is the longest span inside it."""
+    from repurpose_verify.data.fda import propose_disease
+
+    # Qualifiers no label contains: "newly diagnosed", "metastatic", "seizures associated with".
+    span, idx = propose_disease(
+        "for the treatment of adult patients with metastatic colorectal cancer (CRC) who have "
+        "progressed following prior therapy", kg)
+    assert span == "colorectal cancer" and idx == 9
+    # A clause that names no disease yields no proposal rather than a stray word: "clinical"
+    # used to resolve to a plasmacytoma, so a junk span could look like a real approval.
+    assert propose_disease("addition of new clinical study results", kg)[1] is None
+    assert propose_disease("", kg)[1] is None

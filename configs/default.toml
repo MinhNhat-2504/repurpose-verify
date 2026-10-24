@@ -45,10 +45,17 @@ post_phases = ["PHASE2", "PHASE3", "PHASE4"]
 single_drug_trials = true
 # Optional curated list of FDA/EMA approvals of new indications after the cutoff.
 manual_approvals = "data/manual/approvals_after_cutoff.csv"
+# The entity-mapping audit sheet. It holds hand judgements that cannot be regenerated, so it
+# lives with the other curated inputs rather than in data/processed/, which is derived.
+mapping_audit = "data/manual/mapping_audit.csv"
 # Similarity threshold (0-100) for fuzzy name matching when exact/synonym lookup fails; 0 disables.
 fuzzy_threshold = 95
 # Number of evaluation diseases to sample (0 = all diseases that have at least one positive).
 n_eval_diseases = 200
+# The frozen evaluation split. A benchmark's split must not move when upstream data is corrected,
+# so once published it is read from this file and `n_eval_diseases` / `seed` no longer apply.
+# Delete the file to draw a fresh split.
+eval_split = "data/manual/eval_split.csv"
 min_positives_per_disease = 1
 # Evaluation diseases must have at least this many associated genes in the KG. PrimeKG leaves
 # 39% of the diseases carrying a positive with no disease_protein edge at all; on those, no

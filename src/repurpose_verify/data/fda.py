@@ -24,7 +24,8 @@ from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 
-from .kg import DRUG, KnowledgeGraph
+from .kg import DISEASE, DRUG, KnowledgeGraph
+from .normalize import _PAREN
 
 log = logging.getLogger(__name__)
 
@@ -164,13 +165,18 @@ def extract_indication(letter_text: str) -> str | None:
 
 
 def write_candidates(candidates: list[ApprovalCandidate], path: Path, matched_only: bool = True,
-                     letters: dict[tuple[str, str], tuple[str, str]] | None = None) -> Path:
+                     letters: dict[tuple[str, str], tuple[str, str]] | None = None,
+                     kg: KnowledgeGraph | None = None, fuzzy: float = 0) -> Path:
     """Write the worksheet. `disease` is the one column a person has to fill.
 
     When approval-letter text is supplied, `letter_indication` carries the clause in which the
     letter says what the supplement provides for. That is the evidence for the disease, quoted
     rather than interpreted: turning "treatment of adults with giant cell arteritis" into an
     ontology term is a judgement, and it stays with the person making it.
+
+    Given the graph, two further columns carry a *proposed* ontology term for that clause and the
+    span it came from, so the judgement is a confirmation rather than a search. `disease` is still
+    left empty: a proposal that nobody checked is not evidence.
     """
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -179,12 +185,66 @@ def write_candidates(candidates: list[ApprovalCandidate], path: Path, matched_on
     with open(path, "w", encoding="utf-8-sig", newline="") as f:
         w = csv.writer(f)
         w.writerow(["drug", "disease", "date", "source", "note", "kg_id", "letter_indication",
+                    "proposed_disease", "proposed_kg_id", "proposed_from_span",
                     "fda_drug_name", "active_ingredient", "letter_link", "fda_link"])
         for c in rows:
             indication, letter_url = letters.get((c.appl_no, c.submission_no), ("", ""))
+            span, idx = propose_disease(indication, kg, fuzzy) if kg and indication else ("", None)
             w.writerow([c.kg_name or c.active_ingredient, "", c.approval_date.isoformat(),
                         f"FDA efficacy supplement {c.appl_no}/{c.submission_no}", "",
                         f"kg:{c.kg_drug}" if c.kg_drug is not None else "",
-                        indication, c.drug_name, c.active_ingredient, letter_url,
+                        indication,
+                        kg.names[idx] if idx is not None else "",
+                        f"kg:{idx}" if idx is not None else "", span,
+                        c.drug_name, c.active_ingredient, letter_url,
                         APPLICATION_URL.format(appl=c.appl_no)])
     return path
+
+
+# Where a letter stops being boilerplate and starts naming the disease.
+_ANCHORS = re.compile(r"\b(?:for the treatment of|for treatment of|treatment of|indicated (?:in|for)"
+                      r"|indication (?:of|for)|management of|to treat)\b", re.I)
+# Population and eligibility wording that surrounds the disease but is not part of its name.
+_POPULATION = re.compile(
+    r"\b(?:adults?|adult|pediatric|paediatric|children|patients?|subjects?|aged?|years?|months?"
+    r"|of age|and older|older|weighing|at least|\d+\s*(?:kg|mg|cm))\b", re.I)
+_TRAILING_CLAUSE = re.compile(r"\b(?:who|whose|that|which|after|following|based on|as determined"
+                              r"|in combination with|with no|not adequately|requiring)\b.*$", re.I)
+
+
+def propose_disease(letter_indication: str, kg: KnowledgeGraph, fuzzy: float = 0
+                    ) -> tuple[str, int | None]:
+    """Propose the KG disease a letter's indication clause names, as the longest span that resolves.
+
+    The clause carries qualifiers that no ontology label contains - "newly diagnosed acute myeloid
+    leukemia", "unresectable or metastatic ... carcinoma", "seizures associated with Lennox-Gastaut
+    syndrome" - so an exact lookup of the whole phrase fails. Rather than maintain a list of
+    qualifiers to strip, every contiguous span of the cleaned phrase is tried and the longest one
+    that resolves wins: the qualifiers fall away because they are not part of any disease name.
+
+    The result is a *proposal*. Turning a letter's words into an ontology term is a judgement, so
+    the pair is written to a worksheet for a person to confirm, never straight into the ground truth.
+    """
+    text = letter_indication or ""
+    parts = _ANCHORS.split(text)
+    phrase = parts[-1] if len(parts) > 1 else text
+    phrase = _TRAILING_CLAUSE.sub(" ", phrase)
+    phrase = _PAREN.sub(" ", phrase)
+    phrase = _POPULATION.sub(" ", phrase)
+    phrase = re.sub(r"[^A-Za-z0-9\-/' ]+", " ", phrase)
+    tokens = phrase.split()
+    best: tuple[str, int] | None = None
+    for i in range(len(tokens)):
+        for j in range(len(tokens), i, -1):
+            if best is not None and j - i <= len(best[0].split()):
+                break
+            span = " ".join(tokens[i:j])
+            # A three-letter span is an acronym, and an ontology indexes acronyms as synonyms:
+            # "osteoporosis in men" proposed multiple endocrine neoplasia from the word "men".
+            if len(span) < 4:
+                continue
+            idx = kg.resolve(span, DISEASE, fuzzy)
+            if idx is not None:
+                best = (span, idx)
+                break
+    return best if best is not None else (" ".join(tokens), None)

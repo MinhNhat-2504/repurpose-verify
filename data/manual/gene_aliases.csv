@@ -1,6 +1,9 @@
 mention,target,source,note
-COX-2,PTGS2,"Pharmacology convention; HGNC lists COX-2 as an alias of PTGER2","In drug-mechanism text COX-2 denotes prostaglandin-endoperoxide synthase 2 (PTGS2), the target of coxibs. HGNC's alias puts it on PTGER2, so the mention is pinned explicitly."
-COX2,PTGS2,"Pharmacology convention; collides with COX2 (mitochondrial cytochrome c oxidase subunit II)","Same convention as COX-2. Note the KG also holds a gene literally named COX2, which is a different protein."
-COX-1,PTGS1,Pharmacology convention,"COX-1 denotes PTGS1 in drug-mechanism text."
-COX1,PTGS1,Pharmacology convention,"Same as COX-1; distinct from the mitochondrial COX1 gene."
-PDE5,PDE5A,HGNC symbol is PDE5A,"Informal short form used for the sildenafil target."
+COX-2,PTGS2,Pharmacology convention; HGNC lists COX-2 as an alias of PTGER2,"In drug-mechanism text COX-2 denotes prostaglandin-endoperoxide synthase 2 (PTGS2), the target of coxibs. HGNC's alias puts it on PTGER2, so the mention is pinned explicitly."
+COX2,PTGS2,Pharmacology convention; collides with COX2 (mitochondrial cytochrome c oxidase subunit II),"Same convention as COX-2. Note the KG also holds a gene literally named COX2, which is a different protein."
+COX-1,PTGS1,Pharmacology convention,COX-1 denotes PTGS1 in drug-mechanism text.
+COX1,PTGS1,Pharmacology convention,Same as COX-1; distinct from the mitochondrial COX1 gene.
+PDE5,PDE5A,HGNC symbol is PDE5A,Informal short form used for the sildenafil target.
+chronic lymphocytic leukemia,kg:37397,PrimeKG synonym conflates CLL with acute lymphoblastic leukaemia,"PrimeKG node 30654 is named 'acute lymphoblastic/lymphocytic leukemia' but carries 'Chronic Lymphocytic Leukemia' among its synonyms, so every CLL mention resolved to an acute leukaemia. The graph holds the correct term separately as node 37397 'chronic lymphocytic leukemia/small lymphocytic lymphoma'."
+chronic lymphocytic leukaemia,kg:37397,PrimeKG synonym conflates CLL with acute lymphoblastic leukaemia,British spelling of the pinned mention above.
+CLL,kg:37397,PrimeKG lists 'CLL' as a synonym of its acute leukaemia node,Same conflation as the full name; pinned so the acronym agrees with it.

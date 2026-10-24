@@ -64,7 +64,9 @@ def cmd_build_gt(ctx: Context, args) -> None:
         post_phases=g["post_phases"], manual_path=cfg.path("groundtruth", "manual_approvals"),
         fuzzy=g.get("fuzzy_threshold", 0), n_eval=g.get("n_eval_diseases", 0),
         min_pos=g.get("min_positives_per_disease", 1),
-        min_disease_genes=g.get("min_disease_genes", 0), seed=g.get("seed", 13))
+        min_disease_genes=g.get("min_disease_genes", 0),
+        eval_split_path=cfg.path("groundtruth", "eval_split") if g.get("eval_split") else None,
+        seed=g.get("seed", 13))
     report.update(n_pre_trials=len(pre), n_post_trials=len(post))
     gt.save(cfg.path("groundtruth", "out_dir"), report)
     print(json.dumps({k: v for k, v in report.items() if k != "unmapped_manual_approvals"},
@@ -98,7 +100,7 @@ def cmd_fda_approvals(ctx: Context, args) -> None:
         log.info("read %d letters, %d named an indication", len(letters), got)
     out = Path(args.out) if args.out else cfg.path("groundtruth", "manual_approvals").with_name(
         "approvals_candidates.csv")
-    write_candidates(cands, out, matched_only=not args.all_drugs, letters=letters)
+    write_candidates(cands, out, matched_only=not args.all_drugs, letters=letters, kg=ctx.kg)
     matched = sum(c.kg_drug is not None for c in cands)
     print(f"{len(cands)} new-indication approvals between {cfg.cutoff} and {cfg.eval_end};"
           f" {matched} matched a drug in the graph")
@@ -123,7 +125,7 @@ def cmd_audit_mapping(ctx: Context, args) -> None:
                                 first_date=date.fromordinal(cfg.cutoff.toordinal() + 1)))
     df = audit_mapping(ctx.kg, trials, TrialMapper(ctx.kg, g.get("fuzzy_threshold", 0)),
                        n=args.n, seed=g.get("seed", 13))
-    out = Path(args.out or cfg.path("groundtruth", "out_dir") / "mapping_audit.csv")
+    out = Path(args.out) if args.out else cfg.path("groundtruth", "mapping_audit")
     out.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(out, index=False, encoding="utf-8-sig")
     mapped = (df.mapped_drugs != "") & (df.mapped_diseases != "")
@@ -406,7 +408,9 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("-n", type=int, default=200)
     s.add_argument("--out")
     s.add_argument("--score", metavar="FILLED_CSV",
-                   help="score a filled sheet instead of sampling: precision with a 95% interval")
+                   # argparse interpolates help strings, so a literal percent must be doubled:
+                   # "95% interval" is read as the %i conversion and --help raises TypeError.
+                   help="score a filled sheet instead of sampling: precision with a 95%% interval")
     s.set_defaults(fn=cmd_audit_mapping)
 
     s = sub.add_parser("baseline", help="run a KG baseline")
