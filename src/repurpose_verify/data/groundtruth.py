@@ -11,6 +11,7 @@ Everything known at the cutoff is also written out so that rankings can be *filt
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 from collections import defaultdict
@@ -253,11 +254,35 @@ def score_mapping_audit(path: Path, n_boot: int = 2000, seed: int = 13) -> dict:
     return out
 
 
+def stable_sample(keys: Iterable[int], n: int, seed: int) -> list[int]:
+    """Positions of the `n` keys with the lowest hash, as a split that barely moves.
+
+    `DataFrame.sample` draws by row position, so it depends on how many diseases are eligible
+    and in what order. Re-deriving the ground truth after a mapping fix changed the pool by 18
+    diseases out of 1149 and that reshuffled 129 of the 200 evaluation diseases - which would
+    have invalidated every model run. Hashing each disease's own id instead makes membership a
+    property of the disease, so a pool change only moves the split at its margin.
+    """
+    keys = list(keys)
+    order = sorted(range(len(keys)),
+                   key=lambda i: hashlib.sha1(f"{seed}:{keys[i]}".encode()).digest())
+    return sorted(order[:n])
+
+
+def load_eval_split(path: Path | None) -> tuple[set[int] | None, list[int]]:
+    """The frozen evaluation split, or (None, []) when the benchmark has not fixed one yet."""
+    if path is None or not Path(path).exists():
+        return None, []
+    df = pd.read_csv(path)
+    return set(df.disease_idx.astype(int)), []
+
+
 def build_groundtruth(kg: KnowledgeGraph, pre_trials: Iterable[Trial], post_trials: Iterable[Trial],
                       cutoff: date, eval_end: date, *, single_drug: bool = True,
                       post_phases: Iterable[str] = ("PHASE2", "PHASE3", "PHASE4"),
                       manual_path: Path | None = None, fuzzy: float = 0, n_eval: int = 0,
                       min_pos: int = 1, min_disease_genes: int = 0,
+                      eval_split_path: Path | None = None,
                       seed: int = 13) -> tuple[GroundTruth, dict]:
     mapper = TrialMapper(kg, fuzzy)
     min_phase = min(PHASE_RANK[p] for p in post_phases)
@@ -315,8 +340,17 @@ def build_groundtruth(kg: KnowledgeGraph, pre_trials: Iterable[Trial], post_tria
     if min_disease_genes > 0:
         ev_df = ev_df[ev_df.n_genes >= min_disease_genes]
     n_with_genes = len(ev_df)
-    if n_eval and len(ev_df) > n_eval:
-        ev_df = ev_df.sample(n=n_eval, random_state=np.random.RandomState(seed))
+    pinned, pin_dropped = load_eval_split(eval_split_path)
+    if pinned is not None:
+        ev_df = ev_df[ev_df.disease_idx.isin(pinned)]
+        pin_dropped = sorted(pinned - set(ev_df.disease_idx))
+        if pin_dropped:
+            # Scores stay comparable across runs only while the split holds, so a disease that
+            # falls out of eligibility is reported rather than quietly dropped.
+            log.warning("%d pinned evaluation diseases are no longer eligible: %s",
+                        len(pin_dropped), pin_dropped[:20])
+    elif n_eval and len(ev_df) > n_eval:
+        ev_df = ev_df.loc[stable_sample(ev_df.disease_idx, n_eval, seed)]
     ev_df = ev_df.sort_values("disease_idx").reset_index(drop=True)
     in_eval = positives.disease_idx.isin(set(ev_df.disease_idx))
 
@@ -333,6 +367,8 @@ def build_groundtruth(kg: KnowledgeGraph, pre_trials: Iterable[Trial], post_tria
         "n_diseases_dropped_no_genes": n_eligible - n_with_genes,
         "n_diseases_after_gene_filter": n_with_genes,
         "n_eval_diseases": int(len(ev_df)),
+        "eval_split_pinned": pinned is not None,
+        "eval_split_pinned_missing": pin_dropped,
         "unmapped_manual_approvals": unmapped_manual,
         "leakage_check_positives_in_kg": overlap,
         "ceiling": {
