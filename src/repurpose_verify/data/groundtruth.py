@@ -205,6 +205,12 @@ def audit_mapping(kg: KnowledgeGraph, trials: Iterable[Trial], mapper: TrialMapp
             "start_date": t.start_date.isoformat(), "phases": ";".join(t.phases),
             "interventions": " | ".join(i.get("name", "") for i in t.interventions
                                         if i.get("type") in ("DRUG", "BIOLOGICAL")),
+            # The mapper reads otherNames too, so a sheet without them hides the evidence for
+            # its own decisions: an arm called "Chemo-immunotherapy" whose other name is
+            # "carboplatin/etoposide/durvalumab" maps to three drugs that otherwise look invented.
+            "intervention_other_names": " | ".join(
+                n for i in t.interventions if i.get("type") in ("DRUG", "BIOLOGICAL")
+                for n in (i.get("otherNames") or [])),
             "intervention_mesh": " | ".join(m.get("term", "") for m in t.intervention_mesh),
             "mapped_drugs": " | ".join(f"{kg.names[d]} [kg:{d}]" for d in sorted(drugs)),
             "conditions": " | ".join(t.conditions),

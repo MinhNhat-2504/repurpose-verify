@@ -190,8 +190,24 @@ splitting combination strings; generic arms (placebo, standard of care, saline) 
 Conditions are mapped through the trial record's MeSH identifiers to MONDO cross-references,
 falling back to name matching. A drug resolves in 64.9% of trials and a disease in 77.3%; the
 unmatched remainder is dominated by novel compounds absent from DrugBank and by conditions with
-no MONDO equivalent. The `audit-mapping` command samples trials with their mappings for manual
-checking, which we recommend reporting for any derived split.
+no MONDO equivalent.
+
+Coverage says nothing about whether the mappings that *are* made are right, so we audited them.
+Two hundred post-cutoff trials were sampled and each mapped entity judged against the trial
+record: a row counts as correct when every entity the mapper produced corresponds to something
+the trial actually studies. Precision is **0.942** (95% CI 0.894–0.981) over the 104 sampled
+trials carrying a drug mapping and **0.890** (0.838–0.935) over the 154 carrying a disease
+mapping. Trials where nothing mapped are not scored here: that is a recall miss, already
+reported as coverage, and counting it again as a precision error would charge the same gap
+twice.
+
+The errors fall into three kinds, all visible in the released sheet. Fuzzy name matching
+occasionally latches onto a fragment of a chemical name — the IUPAC expansion of navtemadlin
+contains a substring that matched `(S)-Warfarin`. Generic MeSH headings such as *Diagnosis* or
+*Disease* resolve to the ontology's root, giving a meaningless `disease or disorder`. And a MeSH
+heading auto-assigned to a trial is not always a condition under study: a trial of
+chemotherapy-induced neuropathic pain carries the heading *Neoplasms*, which maps to a disease
+the trial does not investigate. The judged sheet is released with the code.
 
 A post-cutoff pair becomes a **positive** when a phase 2+ trial of that pair started in
 (2021-12-31, 2026-12-31], or a curated regulatory approval of the new indication falls in the
@@ -794,9 +810,13 @@ knowledge base that cannot express the mechanism for two of every five positives
 
 * PrimeKG's constituent resources have differing release dates around 2021, so the snapshot
   approximates the cutoff rather than matching it exactly.
-* Entity mapping from trial records is imperfect (64.9% of trials yield a drug, 77.3% a disease);
-  coverage is reported and a sampling tool is provided, but a manual precision audit should
-  accompany any derived split.
+* Entity mapping from trial records is imperfect in both directions: 64.9% of trials yield a
+  drug and 77.3% a disease, and of the mappings made, 0.942 and 0.890 are correct
+  (Section 3.2). Roughly one disease mapping in nine is wrong, which propagates into the
+  positives and is corrected nowhere downstream.
+* That audit was performed by an author rather than an independent rater, and with the
+  assistance of a language model — the same class of system the benchmark evaluates. It is not
+  blinded. We release the judged sheet so the figures can be checked or replaced.
 * Literature support is established by co-mention in a cited pre-cutoff abstract, which is
   necessary but not sufficient; a knowledge-graph-only variant
   (`verifier.accept_literature = false`) is provided as the stricter setting.
@@ -876,20 +896,26 @@ RAG: retrieval-augmented generation.
 
 **Competing interests.** The authors declare that they have no competing interests.
 
-**Funding.** `[to be completed by the authors]`
+**Funding.** This research received no specific grant from any funding agency in the public,
+commercial or not-for-profit sectors.
 
-**Author contributions.** `[to be confirmed by the authors]` — e.g. NTNM designed and implemented
-the benchmark, the verifier and the evaluation, ran the experiments and drafted the manuscript;
-NTML supervised the work, advised on pharmacological interpretation and revised the manuscript.
-Both authors read and approved the final manuscript.
+**Author contributions.** NTNM: conceptualisation, methodology, software, investigation, data
+curation, formal analysis, visualisation, writing — original draft. NTML: supervision, critical
+review of the manuscript. Both authors read and approved the final manuscript.
 
-**Acknowledgements.** `[to be completed by the authors]`
+**Acknowledgements.** This work rests entirely on public resources maintained by others. We
+thank the teams behind PrimeKG, the Mondo Disease Ontology, the HUGO Gene Nomenclature
+Committee, ChEMBL and UniChem, and the National Library of Medicine for ClinicalTrials.gov and
+PubMed, for making their data openly available and programmatically accessible. The benchmark
+exists because those resources can be queried, cached and cited.
 
 **Use of large language models.** An LLM-based coding assistant was used during implementation of
 the software and in preparing the manuscript text. The authors verified all code, re-derived
 every reported number from the stored artefacts with `paper/check_numbers.py`, and checked every
 reference against an authoritative record (see the reference audit note). The authors take full
-responsibility for the content.
+responsibility for the content. The entity-mapping audit in Section 3.2 was carried out by an
+author with the same assistance; it is not an independent or blinded assessment, and the judged
+sheet is released so that it can be checked.
 
 ## References
 
