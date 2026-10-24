@@ -201,7 +201,8 @@ def audit_mapping(kg: KnowledgeGraph, trials: Iterable[Trial], mapper: TrialMapp
         drugs = mapper.drugs(t)
         diseases = mapper.diseases(t)
         rows.append({
-            "nct_id": t.nct_id, "start_date": t.start_date.isoformat(), "phases": ";".join(t.phases),
+            "nct_id": t.nct_id, "link": f"https://clinicaltrials.gov/study/{t.nct_id}",
+            "start_date": t.start_date.isoformat(), "phases": ";".join(t.phases),
             "interventions": " | ".join(i.get("name", "") for i in t.interventions
                                         if i.get("type") in ("DRUG", "BIOLOGICAL")),
             "intervention_mesh": " | ".join(m.get("term", "") for m in t.intervention_mesh),
@@ -213,6 +214,37 @@ def audit_mapping(kg: KnowledgeGraph, trials: Iterable[Trial], mapper: TrialMapp
             "drug_correct_yn": "", "disease_correct_yn": "", "comment": "",
         })
     return pd.DataFrame(rows)
+
+
+def score_mapping_audit(path: Path, n_boot: int = 2000, seed: int = 13) -> dict:
+    """Mapping precision from a filled audit sheet, with a bootstrap interval.
+
+    Only rows where a mapping was actually produced can be judged: a trial with no mapped drug
+    is a recall miss, already reported as coverage, and scoring it as a precision error would
+    count the same gap twice.
+    """
+    import numpy as np
+
+    df = pd.read_csv(path, encoding="utf-8-sig")
+    rng = np.random.default_rng(seed)
+    out: dict = {"rows": len(df)}
+    for kind, mapped_col, judged_col in (("drug", "mapped_drugs", "drug_correct_yn"),
+                                         ("disease", "mapped_diseases", "disease_correct_yn")):
+        if judged_col not in df.columns:
+            continue
+        mask = df[mapped_col].astype(str).str.strip().ne("") & df[mapped_col].notna()
+        judged = df.loc[mask, judged_col].astype(str).str.strip().str.lower()
+        verdicts = judged[judged.isin(["y", "yes", "n", "no", "1", "0", "true", "false"])]
+        correct = verdicts.isin(["y", "yes", "1", "true"]).to_numpy()
+        entry = {"mapped": int(mask.sum()), "judged": int(len(verdicts)),
+                 "unjudged": int(mask.sum() - len(verdicts))}
+        if len(correct):
+            boots = correct[rng.integers(0, len(correct), (n_boot, len(correct)))].mean(axis=1)
+            entry.update(precision=float(correct.mean()),
+                         ci_low=float(np.quantile(boots, 0.025)),
+                         ci_high=float(np.quantile(boots, 0.975)))
+        out[kind] = entry
+    return out
 
 
 def build_groundtruth(kg: KnowledgeGraph, pre_trials: Iterable[Trial], post_trials: Iterable[Trial],

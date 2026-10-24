@@ -1,0 +1,266 @@
+﻿drug,disease,date,source,note,kg_id,fda_drug_name,active_ingredient,fda_link
+Upadacitinib,,2022-01-14,FDA efficacy supplement 211675/4,,kg:15269,RINVOQ,UPADACITINIB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=211675
+Dapagliflozin,,2022-02-03,FDA efficacy supplement 205649/16,,kg:15201,XIGDUO XR,DAPAGLIFLOZIN; METFORMIN HYDROCHLORIDE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=205649
+Empagliflozin,,2022-02-24,FDA efficacy supplement 204629/33,,kg:15847,JARDIANCE,EMPAGLIFLOZIN,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=204629
+Nivolumab,,2022-03-04,FDA efficacy supplement 125554/112,,kg:19603,OPDIVO,NIVOLUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=125554
+Olaparib,,2022-03-11,FDA efficacy supplement 208558/23,,kg:15036,LYNPARZA,OLAPARIB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=208558
+Upadacitinib,,2022-03-16,FDA efficacy supplement 211675/7,,kg:15269,RINVOQ,UPADACITINIB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=211675
+Pembrolizumab,,2022-03-21,FDA efficacy supplement 125514/110,,kg:19604,KEYTRUDA,PEMBROLIZUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=125514
+Fenfluramine,,2022-03-25,FDA efficacy supplement 212102/3,,kg:14957,FINTEPLA,FENFLURAMINE HYDROCHLORIDE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=212102
+Dapagliflozin,,2022-04-11,FDA efficacy supplement 205649/17,,kg:15201,XIGDUO XR,DAPAGLIFLOZIN; METFORMIN HYDROCHLORIDE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=205649
+Leuprolide,,2022-04-18,FDA efficacy supplement 019732/45,,kg:16572,LUPRON DEPOT,LEUPROLIDE ACETATE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=019732
+Leuprolide,,2022-04-18,FDA efficacy supplement 020517/43,,kg:16572,LUPRON DEPOT,LEUPROLIDE ACETATE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=020517
+Baricitinib,,2022-05-10,FDA efficacy supplement 207924/6,,kg:15666,OLUMIANT,BARICITINIB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=207924
+Azacitidine,,2022-05-20,FDA efficacy supplement 050794/34,,kg:15414,VIDAZA,AZACITIDINE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=050794
+Dupilumab,,2022-05-20,FDA efficacy supplement 761055/40,,kg:19330,DUPIXENT,DUPILUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=761055
+Ivosidenib,,2022-05-25,FDA efficacy supplement 211192/9,,kg:15739,TIBSOVO,IVOSIDENIB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=211192
+Ipilimumab,,2022-05-27,FDA efficacy supplement 125377/122,,kg:17991,YERVOY,IPILIMUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=125377
+Nivolumab,,2022-05-27,FDA efficacy supplement 125554/105,,kg:19603,OPDIVO,NIVOLUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=125554
+Nivolumab,,2022-05-27,FDA efficacy supplement 125554/106,,kg:19603,OPDIVO,NIVOLUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=125554
+Dupilumab,,2022-06-07,FDA efficacy supplement 761055/42,,kg:19330,DUPIXENT,DUPILUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=761055
+Baricitinib,,2022-06-13,FDA efficacy supplement 207924/7,,kg:15666,OLUMIANT,BARICITINIB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=207924
+Setmelanotide,,2022-06-16,FDA efficacy supplement 213793/1,,kg:20191,IMCIVREE,SETMELANOTIDE ACETATE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=213793
+Dabrafenib,,2022-06-22,FDA efficacy supplement 202806/22,,kg:15603,TAFINLAR,DABRAFENIB MESYLATE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=202806
+Phentermine,,2022-06-24,FDA efficacy supplement 022580/21,,kg:15417,QSYMIA,PHENTERMINE HYDROCHLORIDE; TOPIRAMATE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=022580
+Crizotinib,,2022-07-14,FDA efficacy supplement 202570/33,,kg:15027,XALKORI,CRIZOTINIB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=202570
+Stiripentol,,2022-07-14,FDA efficacy supplement 206709/3,,kg:15231,DIACOMIT,STIRIPENTOL,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=206709
+Stiripentol,,2022-07-14,FDA efficacy supplement 207223/3,,kg:15231,DIACOMIT,STIRIPENTOL,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=207223
+Ruxolitinib,,2022-07-18,FDA efficacy supplement 215309/1,,kg:15597,OPZELURA,RUXOLITINIB PHOSPHATE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=215309
+Darolutamide,,2022-08-05,FDA efficacy supplement 212099/2,,kg:14470,NUBEQA,DAROLUTAMIDE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=212099
+Estradiol,,2022-08-05,FDA efficacy supplement 214846/2,,kg:14235,MYFEMBREE,ESTRADIOL; NORETHINDRONE ACETATE; RELUGOLIX,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=214846
+Baloxavir marboxil,,2022-08-11,FDA efficacy supplement 210854/9,,kg:15730,XOFLUZA,BALOXAVIR MARBOXIL,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=210854
+Olaparib,,2022-08-26,FDA efficacy supplement 208558/26,,kg:15036,LYNPARZA,OLAPARIB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=208558
+Pemigatinib,,2022-08-26,FDA efficacy supplement 213736/2,,kg:15749,PEMAZYRE,PEMIGATINIB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=213736
+Durvalumab,,2022-09-02,FDA efficacy supplement 761069/35,,kg:19615,IMFINZI,DURVALUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=761069
+Selpercatinib,,2022-09-21,FDA efficacy supplement 213246/8,,kg:15752,RETEVMO,SELPERCATINIB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=213246
+Dupilumab,,2022-09-28,FDA efficacy supplement 761055/44,,kg:19330,DUPIXENT,DUPILUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=761055
+Furosemide,,2022-10-07,FDA efficacy supplement 209988/1,,kg:14217,FUROSCIX,FUROSEMIDE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=209988
+Upadacitinib,,2022-10-21,FDA efficacy supplement 211675/10,,kg:15269,RINVOQ,UPADACITINIB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=211675
+Durvalumab,,2022-10-21,FDA efficacy supplement 761069/36,,kg:19615,IMFINZI,DURVALUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=761069
+Cobimetinib,,2022-10-28,FDA efficacy supplement 206192/5,,kg:14765,COTELLIC,COBIMETINIB FUMARATE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=206192
+Ioflupane I-123,,2022-11-01,FDA efficacy supplement 022454/10,,kg:20226,DATSCAN,IOFLUPANE I-123,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=022454
+Brentuximab vedotin,,2022-11-10,FDA efficacy supplement 125388/106,,kg:15594,ADCETRIS,BRENTUXIMAB VEDOTIN,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=125388
+Levonorgestrel,,2022-11-10,FDA efficacy supplement 206229/12,,kg:14943,LILETTA,LEVONORGESTREL,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=206229
+Durvalumab,,2022-11-10,FDA efficacy supplement 761069/33,,kg:19615,IMFINZI,DURVALUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=761069
+Pemetrexed,,2022-11-22,FDA efficacy supplement 208419/2,,kg:14802,PEMETREXED,PEMETREXED,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=208419
+Pemetrexed,,2022-11-22,FDA efficacy supplement 208419/3,,kg:14802,PEMETREXED,PEMETREXED,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=208419
+Pemetrexed,,2022-11-22,FDA efficacy supplement 208419/4,,kg:14802,PEMETREXED,PEMETREXED,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=208419
+Bortezomib,,2022-12-09,FDA efficacy supplement 209191/3,,kg:15077,BORTEZOMIB,BORTEZOMIB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=209191
+Atezolizumab,,2022-12-09,FDA efficacy supplement 761034/47,,kg:19614,TECENTRIQ,ATEZOLIZUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=761034
+Capecitabine,,2022-12-14,FDA efficacy supplement 020896/44,,kg:14758,XELODA,CAPECITABINE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=020896
+Capecitabine,,2022-12-14,FDA efficacy supplement 020896/45,,kg:14758,XELODA,CAPECITABINE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=020896
+Capecitabine,,2022-12-14,FDA efficacy supplement 020896/46,,kg:14758,XELODA,CAPECITABINE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=020896
+Capecitabine,,2022-12-14,FDA efficacy supplement 020896/47,,kg:14758,XELODA,CAPECITABINE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=020896
+Capecitabine,,2022-12-14,FDA efficacy supplement 020896/48,,kg:14758,XELODA,CAPECITABINE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=020896
+Capecitabine,,2022-12-14,FDA efficacy supplement 020896/49,,kg:14758,XELODA,CAPECITABINE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=020896
+Capecitabine,,2022-12-14,FDA efficacy supplement 020896/50,,kg:14758,XELODA,CAPECITABINE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=020896
+Capecitabine,,2022-12-14,FDA efficacy supplement 020896/51,,kg:14758,XELODA,CAPECITABINE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=020896
+Pemetrexed,,2022-12-14,FDA efficacy supplement 209472/5,,kg:14802,PEMFEXY,PEMETREXED,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=209472
+Cariprazine,,2022-12-16,FDA efficacy supplement 204370/9,,kg:15194,VRAYLAR,CARIPRAZINE HYDROCHLORIDE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=204370
+Abaloparatide,,2022-12-19,FDA efficacy supplement 208743/13,,kg:19661,TYMLOS,ABALOPARATIDE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=208743
+Tocilizumab,,2022-12-21,FDA efficacy supplement 125276/138,,kg:15563,ACTEMRA,TOCILIZUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=125276
+Zanubrutinib,,2023-01-19,FDA efficacy supplement 213217/7,,kg:15748,BRUKINSA,ZANUBRUTINIB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=213217
+Tucatinib,,2023-01-19,FDA efficacy supplement 213411/4,,kg:14708,TUKYSA,TUCATINIB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=213411
+Pembrolizumab,,2023-01-26,FDA efficacy supplement 125514/128,,kg:19604,KEYTRUDA,PEMBROLIZUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=125514
+Sildenafil,,2023-01-31,FDA efficacy supplement 021845/25,,kg:14937,REVATIO,SILDENAFIL CITRATE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=021845
+Empagliflozin,,2023-02-06,FDA efficacy supplement 206111/33,,kg:15847,SYNJARDY,EMPAGLIFLOZIN; METFORMIN HYDROCHLORIDE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=206111
+Empagliflozin,,2023-02-06,FDA efficacy supplement 208658/21,,kg:15847,SYNJARDY XR,EMPAGLIFLOZIN; METFORMIN HYDROCHLORIDE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=208658
+Aflibercept,,2023-02-08,FDA efficacy supplement 125387/75,,kg:16517,EYLEA,AFLIBERCEPT,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=125387
+Leuprolide,,2023-02-28,FDA efficacy supplement 205054/4,,kg:16572,LEUPROLIDE ACETATE FOR DEPOT SUSPENSION,LEUPROLIDE ACETATE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=205054
+Sarilumab,,2023-02-28,FDA efficacy supplement 761037/13,,kg:15662,KEVZARA,SARILUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=761037
+Abemaciclib,,2023-03-03,FDA efficacy supplement 208716/10,,kg:14462,VERZENIO,ABEMACICLIB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=208716
+Abemaciclib,,2023-03-03,FDA efficacy supplement 208716/11,,kg:14462,VERZENIO,ABEMACICLIB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=208716
+Pembrolizumab,,2023-03-28,FDA efficacy supplement 125514/132,,kg:19604,KEYTRUDA,PEMBROLIZUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=125514
+Pembrolizumab,,2023-04-03,FDA efficacy supplement 125514/136,,kg:19604,KEYTRUDA,PEMBROLIZUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=125514
+Budesonide,,2023-04-28,FDA efficacy supplement 216579/1,,kg:14034,SYMBICORT AEROSPHERE,BUDESONIDE; FORMOTEROL FUMARATE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=216579
+Ivacaftor,,2023-05-03,FDA efficacy supplement 207925/16,,kg:14400,KALYDECO,IVACAFTOR,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=207925
+Dapagliflozin,,2023-05-08,FDA efficacy supplement 202293/26,,kg:15201,FARXIGA,DAPAGLIFLOZIN,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=202293
+Brexpiprazole,,2023-05-10,FDA efficacy supplement 205422/9,,kg:15232,REXULTI,BREXPIPRAZOLE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=205422
+Upadacitinib,,2023-05-18,FDA efficacy supplement 211675/15,,kg:15269,RINVOQ,UPADACITINIB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=211675
+Avapritinib,,2023-05-22,FDA efficacy supplement 212608/13,,kg:15750,AYVAKIT,AVAPRITINIB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=212608
+Iopromide,,2023-05-25,FDA efficacy supplement 020220/54,,kg:20806,ULTRAVIST 370,IOPROMIDE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=020220
+Iopromide,,2023-05-25,FDA efficacy supplement 021425/36,,kg:20806,ULTRAVIST (PHARMACY BULK),IOPROMIDE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=021425
+Ferric carboxymaltose,,2023-05-31,FDA efficacy supplement 203565/20,,kg:21540,INJECTAFER,FERRIC CARBOXYMALTOSE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=203565
+Olaparib,,2023-05-31,FDA efficacy supplement 208558/25,,kg:15036,LYNPARZA,OLAPARIB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=208558
+Linaclotide,,2023-06-12,FDA efficacy supplement 202811/21,,kg:19650,LINZESS,LINACLOTIDE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=202811
+Talazoparib,,2023-06-20,FDA efficacy supplement 211651/10,,kg:19030,TALZENNA,TALAZOPARIB TOSYLATE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=211651
+Levonorgestrel,,2023-06-29,FDA efficacy supplement 206229/13,,kg:14943,LILETTA,LEVONORGESTREL,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=206229
+Leuprolide,,2023-07-20,FDA efficacy supplement 021343/48,,kg:16572,ELIGARD KIT,LEUPROLIDE ACETATE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=021343
+Leuprolide,,2023-07-20,FDA efficacy supplement 021379/50,,kg:16572,ELIGARD KIT,LEUPROLIDE ACETATE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=021379
+Leuprolide,,2023-07-20,FDA efficacy supplement 021488/45,,kg:16572,ELIGARD KIT,LEUPROLIDE ACETATE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=021488
+Leuprolide,,2023-07-20,FDA efficacy supplement 021731/47,,kg:16572,ELIGARD KIT,LEUPROLIDE ACETATE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=021731
+Tipiracil,,2023-08-02,FDA efficacy supplement 207981/12,,kg:19217,LONSURF,TIPIRACIL HYDROCHLORIDE; TRIFLURIDINE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=207981
+Rosuvastatin,,2023-08-04,FDA efficacy supplement 208647/7,,kg:14298,EZALLOR SPRINKLE,ROSUVASTATIN CALCIUM,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=208647
+Rosuvastatin,,2023-08-04,FDA efficacy supplement 208647/8,,kg:14298,EZALLOR SPRINKLE,ROSUVASTATIN CALCIUM,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=208647
+Rosuvastatin,,2023-08-04,FDA efficacy supplement 208647/9,,kg:14298,EZALLOR SPRINKLE,ROSUVASTATIN CALCIUM,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=208647
+Rosuvastatin,,2023-08-04,FDA efficacy supplement 208647/10,,kg:14298,EZALLOR SPRINKLE,ROSUVASTATIN CALCIUM,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=208647
+Rosuvastatin,,2023-08-04,FDA efficacy supplement 208647/11,,kg:14298,EZALLOR SPRINKLE,ROSUVASTATIN CALCIUM,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=208647
+Canakinumab,,2023-08-25,FDA efficacy supplement 125319/107,,kg:18416,ILARIS,CANAKINUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=125319
+Dabrafenib,,2023-08-31,FDA efficacy supplement 202806/27,,kg:15603,TAFINLAR,DABRAFENIB MESYLATE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=202806
+Temozolomide,,2023-09-14,FDA efficacy supplement 021029/38,,kg:20336,TEMODAR,TEMOZOLOMIDE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=021029
+Temozolomide,,2023-09-14,FDA efficacy supplement 021029/37,,kg:20336,TEMODAR,TEMOZOLOMIDE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=021029
+Temozolomide,,2023-09-14,FDA efficacy supplement 021029/36,,kg:20336,TEMODAR,TEMOZOLOMIDE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=021029
+Temozolomide,,2023-09-14,FDA efficacy supplement 022277/17,,kg:20336,TEMODAR,TEMOZOLOMIDE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=022277
+Temozolomide,,2023-09-14,FDA efficacy supplement 022277/18,,kg:20336,TEMODAR,TEMOZOLOMIDE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=022277
+Temozolomide,,2023-09-14,FDA efficacy supplement 022277/19,,kg:20336,TEMODAR,TEMOZOLOMIDE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=022277
+Empagliflozin,,2023-09-21,FDA efficacy supplement 204629/40,,kg:15847,JARDIANCE,EMPAGLIFLOZIN,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=204629
+Bosutinib,,2023-09-26,FDA efficacy supplement 203341/25,,kg:15572,BOSULIF,BOSUTINIB MONOHYDRATE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=203341
+Encorafenib,,2023-10-11,FDA efficacy supplement 210496/14,,kg:15243,BRAFTOVI,ENCORAFENIB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=210496
+Binimetinib,,2023-10-11,FDA efficacy supplement 210498/9,,kg:15391,MEKTOVI,BINIMETINIB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=210498
+Pembrolizumab,,2023-10-12,FDA efficacy supplement 125514/138,,kg:19604,KEYTRUDA,PEMBROLIZUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=125514
+Nivolumab,,2023-10-13,FDA efficacy supplement 125554/121,,kg:19603,OPDIVO,NIVOLUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=125554
+Etanercept,,2023-10-18,FDA efficacy supplement 103795/5595,,kg:17583,ENBREL,ETANERCEPT,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=103795
+Ivosidenib,,2023-10-24,FDA efficacy supplement 211192/11,,kg:15739,TIBSOVO,IVOSIDENIB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=211192
+Abatacept,,2023-10-30,FDA efficacy supplement 125118/250,,kg:17883,ORENCIA,ABATACEPT,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=125118
+Secukinumab,,2023-10-31,FDA efficacy supplement 125504/63,,kg:20160,COSENTYX,SECUKINUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=125504
+Pembrolizumab,,2023-10-31,FDA efficacy supplement 125514/144,,kg:19604,KEYTRUDA,PEMBROLIZUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=125514
+Pembrolizumab,,2023-11-07,FDA efficacy supplement 125514/148,,kg:19604,KEYTRUDA,PEMBROLIZUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=125514
+Bupivacaine,,2023-11-09,FDA efficacy supplement 022496/44,,kg:15088,EXPAREL,BUPIVACAINE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=022496
+Pembrolizumab,,2023-11-16,FDA efficacy supplement 125514/143,,kg:19604,KEYTRUDA,PEMBROLIZUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=125514
+Enzalutamide,,2023-11-16,FDA efficacy supplement 203415/22,,kg:14408,XTANDI,ENZALUTAMIDE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=203415
+Enzalutamide,,2023-11-16,FDA efficacy supplement 213674/10,,kg:14408,XTANDI,ENZALUTAMIDE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=213674
+Alpelisib,,2024-01-18,FDA efficacy supplement 212526/9,,kg:15675,PIQRAY,ALPELISIB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=212526
+Erdafitinib,,2024-01-19,FDA efficacy supplement 212018/9,,kg:15680,BALVERSA,ERDAFITINIB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=212018
+Bupivacaine,,2024-01-23,FDA efficacy supplement 211988/13,,kg:15088,ZYNRELEF KIT,BUPIVACAINE; MELOXICAM,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=211988
+Irinotecan,,2024-02-13,FDA efficacy supplement 207793/16,,kg:14231,ONIVYDE,IRINOTECAN HYDROCHLORIDE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=207793
+Omalizumab,,2024-02-16,FDA efficacy supplement 103976/5245,,kg:15971,XOLAIR,OMALIZUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=103976
+Osimertinib,,2024-02-16,FDA efficacy supplement 208065/30,,kg:15377,TAGRISSO,OSIMERTINIB MESYLATE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=208065
+Bictegravir,,2024-02-23,FDA efficacy supplement 210251/18,,kg:15664,BIKTARVY,BICTEGRAVIR SODIUM; EMTRICITABINE; TENOFOVIR ALAFENAMIDE FUMARATE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=210251
+Inotuzumab ozogamicin,,2024-03-06,FDA efficacy supplement 761040/3,,kg:16558,BESPONSA,INOTUZUMAB OZOGAMICIN,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=761040
+Zanubrutinib,,2024-03-07,FDA efficacy supplement 213217/11,,kg:15748,BRUKINSA,ZANUBRUTINIB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=213217
+Alirocumab,,2024-03-08,FDA efficacy supplement 125559/39,,kg:20162,PRALUENT,ALIROCUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=125559
+Semaglutide,,2024-03-08,FDA efficacy supplement 215256/11,,kg:14475,WEGOVY,SEMAGLUTIDE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=215256
+Fluticasone propionate,,2024-03-15,FDA efficacy supplement 209022/19,,kg:14020,XHANCE,FLUTICASONE PROPIONATE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=209022
+Ponatinib,,2024-03-19,FDA efficacy supplement 203469/37,,kg:15030,ICLUSIG,PONATINIB HYDROCHLORIDE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=203469
+Bempedoic acid,,2024-03-22,FDA efficacy supplement 211616/12,,kg:14690,NEXLETOL,BEMPEDOIC ACID,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=211616
+Bempedoic acid,,2024-03-22,FDA efficacy supplement 211616/13,,kg:14690,NEXLETOL,BEMPEDOIC ACID,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=211616
+Bempedoic acid,,2024-03-22,FDA efficacy supplement 211617/16,,kg:14690,NEXLIZET,BEMPEDOIC ACID; EZETIMIBE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=211617
+Bempedoic acid,,2024-03-22,FDA efficacy supplement 211617/17,,kg:14690,NEXLIZET,BEMPEDOIC ACID; EZETIMIBE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=211617
+Iloperidone,,2024-04-02,FDA efficacy supplement 022192/23,,kg:15006,FANAPT,ILOPERIDONE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=022192
+Alectinib,,2024-04-18,FDA efficacy supplement 208434/15,,kg:17030,ALECENSA,ALECTINIB HYDROCHLORIDE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=208434
+Apremilast,,2024-04-25,FDA efficacy supplement 205437/13,,kg:15349,OTEZLA,APREMILAST,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=205437
+Selpercatinib,,2024-05-29,FDA efficacy supplement 213246/12,,kg:15752,RETEVMO,SELPERCATINIB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=213246
+Lacosamide,,2024-06-07,FDA efficacy supplement 216185/1,,kg:15559,MOTPOLY XR,LACOSAMIDE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=216185
+Sarilumab,,2024-06-10,FDA efficacy supplement 761037/15,,kg:15662,KEVZARA,SARILUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=761037
+Selpercatinib,,2024-06-12,FDA efficacy supplement 213246/9,,kg:15752,RETEVMO,SELPERCATINIB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=213246
+Tralokinumab,,2024-06-12,FDA efficacy supplement 761180/6,,kg:21093,ADBRY,TRALOKINUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=761180
+Tapentadol,,2024-06-14,FDA efficacy supplement 022304/28,,kg:15199,NUCYNTA,TAPENTADOL HYDROCHLORIDE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=022304
+Blinatumomab,,2024-06-14,FDA efficacy supplement 125557/28,,kg:19620,BLINCYTO,BLINATUMOMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=125557
+Durvalumab,,2024-06-14,FDA efficacy supplement 761069/45,,kg:19615,IMFINZI,DURVALUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=761069
+Pembrolizumab,,2024-06-17,FDA efficacy supplement 125514/155,,kg:19604,KEYTRUDA,PEMBROLIZUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=125514
+Roflumilast,,2024-07-09,FDA efficacy supplement 215985/7,,kg:15520,ZORYVE,ROFLUMILAST,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=215985
+Ribociclib,,2024-07-22,FDA efficacy supplement 209092/19,,kg:15659,KISQALI,RIBOCICLIB SUCCINATE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=209092
+Durvalumab,,2024-08-15,FDA efficacy supplement 761069/43,,kg:19615,IMFINZI,DURVALUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=761069
+Sparsentan,,2024-09-05,FDA efficacy supplement 216403/3,,kg:17373,FILSPARI,SPARSENTAN,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=216403
+Guselkumab,,2024-09-11,FDA efficacy supplement 761061/21,,kg:19571,TREMFYA,GUSELKUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=761061
+Lanreotide,,2024-09-16,FDA efficacy supplement 215395/7,,kg:15584,LANREOTIDE ACETATE,LANREOTIDE ACETATE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=215395
+Pembrolizumab,,2024-09-17,FDA efficacy supplement 125514/161,,kg:19604,KEYTRUDA,PEMBROLIZUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=125514
+Ribociclib,,2024-09-17,FDA efficacy supplement 209092/18,,kg:15659,KISQALI,RIBOCICLIB SUCCINATE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=209092
+Letrozole,,2024-09-17,FDA efficacy supplement 209935/27,,kg:14277,KISQALI FEMARA CO-PACK (COPACKAGED),LETROZOLE; RIBOCICLIB SUCCINATE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=209935
+Benralizumab,,2024-09-17,FDA efficacy supplement 761070/21,,kg:19177,FASENRA,BENRALIZUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=761070
+Osimertinib,,2024-09-25,FDA efficacy supplement 208065/33,,kg:15377,TAGRISSO,OSIMERTINIB MESYLATE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=208065
+Nivolumab,,2024-10-03,FDA efficacy supplement 125554/127,,kg:19603,OPDIVO,NIVOLUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=125554
+Abemaciclib,,2024-11-13,FDA efficacy supplement 208716/17,,kg:14462,VERZENIO,ABEMACICLIB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=208716
+Fludarabine,,2024-11-19,FDA efficacy supplement 022137/15,,kg:16972,FLUDARABINE PHOSPHATE,FLUDARABINE PHOSPHATE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=022137
+Durvalumab,,2024-12-04,FDA efficacy supplement 761069/49,,kg:19615,IMFINZI,DURVALUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=761069
+Vibegron,,2024-12-18,FDA efficacy supplement 213006/11,,kg:15746,GEMTESA,VIBEGRON,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=213006
+Dapagliflozin,,2024-12-20,FDA efficacy supplement 205649/23,,kg:15201,XIGDUO XR,DAPAGLIFLOZIN; METFORMIN HYDROCHLORIDE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=205649
+Encorafenib,,2024-12-20,FDA efficacy supplement 210496/17,,kg:15243,BRAFTOVI,ENCORAFENIB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=210496
+Setmelanotide,,2024-12-20,FDA efficacy supplement 213793/7,,kg:20191,IMCIVREE,SETMELANOTIDE ACETATE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=213793
+Tirzepatide,,2024-12-20,FDA efficacy supplement 217806/13,,kg:21224,ZEPBOUND (AUTOINJECTOR),TIRZEPATIDE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=217806
+Nivolumab,,2024-12-27,FDA efficacy supplement 761381/1,,kg:19603,OPDIVO QVANTIG,NIVOLUMAB;HYALURONIDASE-NVHY,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=761381
+Panitumumab,,2025-01-16,FDA efficacy supplement 125147/213,,kg:17711,VECTIBIX,PANITUMUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=125147
+Acalabrutinib,,2025-01-16,FDA efficacy supplement 210259/11,,kg:14450,CALQUENCE,ACALABRUTINIB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=210259
+Acalabrutinib,,2025-01-16,FDA efficacy supplement 216387/5,,kg:14450,CALQUENCE,ACALABRUTINIB MALEATE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=216387
+Esketamine,,2025-01-17,FDA efficacy supplement 211243/16,,kg:15667,SPRAVATO,ESKETAMINE HYDROCHLORIDE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=211243
+Semaglutide,,2025-01-28,FDA efficacy supplement 209637/25,,kg:14475,OZEMPIC,SEMAGLUTIDE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=209637
+Ranibizumab,,2025-02-03,FDA efficacy supplement 761197/6,,kg:16511,SUSVIMO,RANIBIZUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=761197
+Brentuximab vedotin,,2025-02-11,FDA efficacy supplement 125388/108,,kg:15594,ADCETRIS,BRENTUXIMAB VEDOTIN,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=125388
+Tenecteplase,,2025-02-28,FDA efficacy supplement 103909/5197,,kg:16592,TNKASE,TENECTEPLASE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=103909
+Furosemide,,2025-03-06,FDA efficacy supplement 209988/3,,kg:14217,FUROSCIX,FUROSEMIDE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=209988
+Empagliflozin,,2025-03-07,FDA efficacy supplement 206111/45,,kg:15847,SYNJARDY,EMPAGLIFLOZIN; METFORMIN HYDROCHLORIDE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=206111
+Empagliflozin,,2025-03-07,FDA efficacy supplement 208658/32,,kg:15847,SYNJARDY XR,EMPAGLIFLOZIN; METFORMIN HYDROCHLORIDE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=208658
+Glucagon,,2025-03-14,FDA efficacy supplement 212097/12,,kg:17374,GVOKE PFS,GLUCAGON,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=212097
+Guselkumab,,2025-03-20,FDA efficacy supplement 761061/24,,kg:19571,TREMFYA,GUSELKUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=761061
+Durvalumab,,2025-03-28,FDA efficacy supplement 761069/50,,kg:19615,IMFINZI,DURVALUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=761069
+Aripiprazole,,2025-04-15,FDA efficacy supplement 211448/1,,kg:14323,MEZOFY,ARIPIPRAZOLE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=211448
+Osilodrostat,,2025-04-15,FDA efficacy supplement 212801/3,,kg:15049,ISTURISA,OSILODROSTAT PHOSPHATE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=212801
+Upadacitinib,,2025-04-28,FDA efficacy supplement 211675/25,,kg:15269,RINVOQ,UPADACITINIB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=211675
+Ranibizumab,,2025-05-21,FDA efficacy supplement 761197/7,,kg:16511,SUSVIMO,RANIBIZUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=761197
+Pembrolizumab,,2025-05-22,FDA efficacy supplement 125514/182,,kg:19604,KEYTRUDA,PEMBROLIZUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=125514
+Roflumilast,,2025-05-22,FDA efficacy supplement 217242/5,,kg:15520,ZORYVE,ROFLUMILAST,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=217242
+Ipilimumab,,2025-05-23,FDA efficacy supplement 125377/136,,kg:17991,YERVOY,IPILIMUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=125377
+Nivolumab,,2025-05-23,FDA efficacy supplement 125554/133,,kg:19603,OPDIVO,NIVOLUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=125554
+Darolutamide,,2025-06-03,FDA efficacy supplement 212099/8,,kg:14470,NUBEQA,DAROLUTAMIDE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=212099
+Glecaprevir,,2025-06-10,FDA efficacy supplement 209394/19,,kg:15725,MAVYRET,GLECAPREVIR; PIBRENTASVIR,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=209394
+Nitisinone,,2025-06-10,FDA efficacy supplement 209449/18,,kg:17286,NITYR,NITISINONE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=209449
+Glecaprevir,,2025-06-10,FDA efficacy supplement 215110/5,,kg:15725,MAVYRET,GLECAPREVIR; PIBRENTASVIR,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=215110
+Talazoparib,,2025-06-12,FDA efficacy supplement 211651/13,,kg:19030,TALZENNA,TALAZOPARIB TOSYLATE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=211651
+Talazoparib,,2025-06-12,FDA efficacy supplement 217439/3,,kg:19030,TALZENNA,TALAZOPARIB TOSYLATE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=217439
+Avatrombopag,,2025-07-24,FDA efficacy supplement 210238/10,,kg:15799,DOPTELET,AVATROMBOPAG MALEATE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=210238
+Inclisiran,,2025-07-31,FDA efficacy supplement 214012/16,,kg:20163,LEQVIO,INCLISIRAN SODIUM,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=214012
+Dasatinib,,2025-08-01,FDA efficacy supplement 216099/5,,kg:14794,PHYRAGO,DASATINIB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=216099
+Semaglutide,,2025-08-15,FDA efficacy supplement 215256/24,,kg:14475,WEGOVY,SEMAGLUTIDE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=215256
+Selumetinib,,2025-09-10,FDA efficacy supplement 213756/5,,kg:14449,KOSELUGO,SELUMETINIB SULFATE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=213756
+Guselkumab,,2025-09-19,FDA efficacy supplement 761061/26,,kg:19571,TREMFYA,GUSELKUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=761061
+Pembrolizumab,,2025-09-19,FDA efficacy supplement 761467/1,,kg:19604,KEYTRUDA QLEX,PEMBROLIZUMAB;BERAHYALURONIDASE ALFA-PMPH,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=761467
+Guselkumab,,2025-09-26,FDA efficacy supplement 761061/29,,kg:19571,TREMFYA,GUSELKUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=761061
+Lurbinectedin,,2025-10-02,FDA efficacy supplement 213702/11,,kg:14468,ZEPZELCA,LURBINECTEDIN,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=213702
+Atezolizumab,,2025-10-02,FDA efficacy supplement 761034/58,,kg:19614,TECENTRIQ,ATEZOLIZUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=761034
+Golimumab,,2025-10-07,FDA efficacy supplement 125289/157,,kg:17601,SIMPONI,GOLIMUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=125289
+Alirocumab,,2025-10-09,FDA efficacy supplement 125559/47,,kg:20162,PRALUENT,ALIROCUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=125559
+Iopamidol,,2025-10-10,FDA efficacy supplement 018735/75,,kg:21618,ISOVUE-M 200,IOPAMIDOL,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=018735
+Risperidone,,2025-10-10,FDA efficacy supplement 213586/8,,kg:14223,UZEDY,RISPERIDONE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=213586
+Tofacitinib,,2025-10-16,FDA efficacy supplement 203214/39,,kg:14407,XELJANZ,TOFACITINIB CITRATE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=203214
+Tofacitinib,,2025-10-16,FDA efficacy supplement 213082/11,,kg:14407,XELJANZ,TOFACITINIB CITRATE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=213082
+Obinutuzumab,,2025-10-17,FDA efficacy supplement 125486/37,,kg:16230,GAZYVA,OBINUTUZUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=125486
+Semaglutide,,2025-10-17,FDA efficacy supplement 213051/24,,kg:14475,RYBELSUS,SEMAGLUTIDE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=213051
+Nivolumab,,2025-10-27,FDA efficacy supplement 761381/2,,kg:19603,OPDIVO QVANTIG,NIVOLUMAB;HYALURONIDASE-NVHY,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=761381
+Lumateperone,,2025-11-05,FDA efficacy supplement 209500/16,,kg:14633,CAPLYTA,LUMATEPERONE TOSYLATE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=209500
+Selumetinib,,2025-11-19,FDA efficacy supplement 213756/6,,kg:14449,KOSELUGO,SELUMETINIB SULFATE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=213756
+Dexmedetomidine,,2025-11-19,FDA efficacy supplement 215390/2,,kg:15111,IGALMI,DEXMEDETOMIDINE HYDROCHLORIDE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=215390
+Aflibercept,,2025-11-19,FDA efficacy supplement 761355/10,,kg:16517,EYLEA HD,AFLIBERCEPT,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=761355
+Pembrolizumab,,2025-11-21,FDA efficacy supplement 125514/188,,kg:19604,KEYTRUDA,PEMBROLIZUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=125514
+Bempedoic acid,,2025-11-21,FDA efficacy supplement 211616/24,,kg:14690,NEXLETOL,BEMPEDOIC ACID,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=211616
+Bempedoic acid,,2025-11-21,FDA efficacy supplement 211617/29,,kg:14690,NEXLIZET,BEMPEDOIC ACID; EZETIMIBE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=211617
+Semaglutide,,2025-11-21,FDA efficacy supplement 215256/23,,kg:14475,WEGOVY,SEMAGLUTIDE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=215256
+Durvalumab,,2025-11-25,FDA efficacy supplement 761069/52,,kg:19615,IMFINZI,DURVALUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=761069
+Abiraterone,,2025-12-12,FDA efficacy supplement 216793/1,,kg:14376,AKEEGA,ABIRATERONE ACETATE; NIRAPARIB TOSYLATE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=216793
+Flibanserin,,2025-12-13,FDA efficacy supplement 022526/13,,kg:15543,ADDYI,FLIBANSERIN,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=022526
+Imiglucerase,,2026-01-12,FDA efficacy supplement 020367/123,,kg:20604,CEREZYME,IMIGLUCERASE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=020367
+Ibuprofen,,2026-01-23,FDA efficacy supplement 022348/28,,kg:14287,CALDOLOR,IBUPROFEN,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=022348
+Inclisiran,,2026-02-12,FDA efficacy supplement 214012/18,,kg:20163,LEQVIO,INCLISIRAN SODIUM,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=214012
+Acalabrutinib,,2026-02-19,FDA efficacy supplement 210259/12,,kg:14450,CALQUENCE,ACALABRUTINIB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=210259
+Acalabrutinib,,2026-02-19,FDA efficacy supplement 216387/6,,kg:14450,CALQUENCE,ACALABRUTINIB MALEATE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=216387
+Dupilumab,,2026-02-23,FDA efficacy supplement 761055/75,,kg:19330,DUPIXENT,DUPILUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=761055
+Encorafenib,,2026-02-24,FDA efficacy supplement 210496/21,,kg:15243,BRAFTOVI,ENCORAFENIB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=210496
+Leucovorin,,2026-03-09,FDA efficacy supplement 018342/15,,kg:20274,WELLCOVORIN,LEUCOVORIN CALCIUM,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=018342
+Secukinumab,,2026-03-12,FDA efficacy supplement 125504/91,,kg:20160,COSENTYX,SECUKINUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=125504
+Setmelanotide,,2026-03-19,FDA efficacy supplement 213793/9,,kg:20191,IMCIVREE,SETMELANOTIDE ACETATE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=213793
+Sparsentan,,2026-04-13,FDA efficacy supplement 216403/6,,kg:17373,FILSPARI,SPARSENTAN,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=216403
+Secukinumab,,2026-04-17,FDA efficacy supplement 125504/98,,kg:20160,COSENTYX,SECUKINUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=125504
+Selinexor,,2026-04-23,FDA efficacy supplement 212306/18,,kg:15670,XPOVIO,SELINEXOR,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=212306
+Budesonide,,2026-04-27,FDA efficacy supplement 212122/9,,kg:14034,BREZTRI AEROSPHERE,BUDESONIDE; FORMOTEROL FUMARATE; GLYCOPYRROLATE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=212122
+Bupropion,,2026-04-30,FDA efficacy supplement 215430/18,,kg:14544,AUVELITY,BUPROPION HYDROCHLORIDE; DEXTROMETHORPHAN HYDROBROMIDE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=215430
+Ocrelizumab,,2026-05-08,FDA efficacy supplement 761053/38,,kg:16232,OCREVUS,OCRELIZUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=761053
+Benralizumab,,2026-05-13,FDA efficacy supplement 761070/23,,kg:19177,FASENRA,BENRALIZUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=761070
+Selexipag,,2026-05-23,FDA efficacy supplement 207947/14,,kg:15642,UPTRAVI,SELEXIPAG,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=207947
+Durvalumab,,2026-05-28,FDA efficacy supplement 761069/53,,kg:19615,IMFINZI,DURVALUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=761069
+Pembrolizumab,,2026-06-12,FDA efficacy supplement 125514/192,,kg:19604,KEYTRUDA,PEMBROLIZUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=125514
+Pembrolizumab,,2026-06-12,FDA efficacy supplement 761467/9,,kg:19604,KEYTRUDA QLEX,PEMBROLIZUMAB;BERAHYALURONIDASE ALFA-PMPH,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=761467
+Palbociclib,,2026-06-24,FDA efficacy supplement 207103/24,,kg:14412,IBRANCE,PALBOCICLIB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=207103
+Palbociclib,,2026-06-24,FDA efficacy supplement 212436/12,,kg:14412,IBRANCE,PALBOCICLIB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=212436
+Pembrolizumab,,2026-07-10,FDA efficacy supplement 125514/194,,kg:19604,KEYTRUDA,PEMBROLIZUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=125514
+Pembrolizumab,,2026-07-10,FDA efficacy supplement 761467/12,,kg:19604,KEYTRUDA QLEX,PEMBROLIZUMAB;BERAHYALURONIDASE ALFA-PMPH,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=761467
+Tirzepatide,,2026-08-27,FDA efficacy supplement 215866/44,,kg:21224,MOUNJARO (AUTOINJECTOR),TIRZEPATIDE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=215866
+Aminolevulinic acid,,2026-09-09,FDA efficacy supplement 208081/40,,kg:16183,AMELUZ,AMINOLEVULINIC ACID HYDROCHLORIDE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=208081
+Abemaciclib,,2026-09-18,FDA efficacy supplement 208716/22,,kg:14462,VERZENIO,ABEMACICLIB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=208716
+Lenvatinib,,2026-09-24,FDA efficacy supplement 206947/35,,kg:15230,LENVIMA,LENVATINIB MESYLATE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=206947
+Obinutuzumab,,2026-09-25,FDA efficacy supplement 125486/43,,kg:16230,GAZYVA,OBINUTUZUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=125486
+Baricitinib,,2026-09-25,FDA efficacy supplement 207924/9,,kg:15666,OLUMIANT,BARICITINIB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=207924
+Tucatinib,,2026-10-07,FDA efficacy supplement 213411/10,,kg:14708,TUKYSA,TUCATINIB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=213411
+Atezolizumab,,2026-10-08,FDA efficacy supplement 761034/65,,kg:19614,TECENTRIQ,ATEZOLIZUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=761034
+Evolocumab,,2026-10-09,FDA efficacy supplement 125522/47,,kg:15901,REPATHA,EVOLOCUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=125522
+Pembrolizumab,,2026-10-16,FDA efficacy supplement 125514/191,,kg:19604,KEYTRUDA,PEMBROLIZUMAB,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=125514
+Phentolamine,,2026-10-16,FDA efficacy supplement 217064/5,,kg:16844,RYZUMVI,PHENTOLAMINE MESYLATE,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=217064
+Pembrolizumab,,2026-10-16,FDA efficacy supplement 761467/8,,kg:19604,KEYTRUDA QLEX,PEMBROLIZUMAB;BERAHYALURONIDASE ALFA-PMPH,https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=761467

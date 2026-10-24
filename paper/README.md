@@ -49,12 +49,21 @@ but disagree on the impact factor (3.9 vs 4.33), and SCImago blocks automated ac
    with verification records, and the generated reports.
 2. **Complete the declarations** in Section 11: funding, acknowledgements, and confirm the author
    contribution statement.
-3. **Curated approvals.** `data/manual/approvals_after_cutoff.csv` is empty; FDA/EMA
-   new-indication approvals after the cutoff would add the `approved` tier, the strongest
-   positive label.
-4. **Mapping audit.** Fill `data/processed/groundtruth/mapping_audit.csv` (from `audit-mapping`).
-   It asks only whether a trial's drug and condition were matched to the right entities, so it
-   needs no pharmacological judgement, and it covers the limitation reviewers press on.
+3. **Curated approvals.** `python -m repurpose_verify fda-approvals` downloads the Drugs@FDA
+   bulk release and writes `data/manual/approvals_candidates.csv`: every submission tagged
+   *Efficacy-New Indication*, approved in the evaluation window, whose drug matches the graph.
+   265 such approvals exist for this window. Drugs@FDA records that an indication was added but
+   never which one, so the `disease` column is filled by hand from the FDA record linked in each
+   row; rows that turn out not to be a new indication for an existing drug are deleted. Copy the
+   first five columns into `approvals_after_cutoff.csv` and re-run `build-gt` to add the
+   `approved` tier.
+4. **Mapping audit.** `data/processed/groundtruth/mapping_audit.csv` (from `audit-mapping`) holds
+   200 sampled trials with a link to each record. Judging a row means checking whether the drug
+   and condition were matched to the right entities - identity, not pharmacology - so it needs no
+   clinical training. Fill `drug_correct_yn` / `disease_correct_yn`, then
+   `audit-mapping --score <file>` reports precision with a bootstrap interval, counting only rows
+   where a mapping was produced: an unmapped trial is a recall miss already reported as coverage,
+   and scoring it twice would overstate the problem.
 5. **Reference style.** The list is currently in a readable long form. Convert to the journal's
    style at submission; every entry has a DOI or arXiv identifier already.
 

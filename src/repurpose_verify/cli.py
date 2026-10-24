@@ -71,9 +71,36 @@ def cmd_build_gt(ctx: Context, args) -> None:
                      indent=2, default=str))
 
 
+def cmd_fda_approvals(ctx: Context, args) -> None:
+    """Build the worksheet of candidate new-indication approvals after the cutoff."""
+    from .data.fda import BULK_URL, find_new_indication_approvals, write_candidates
+    from .utils import download
+
+    cfg = ctx.cfg
+    archive = cfg.path("paths", "data_dir") / "raw" / "drugsatfda" / "dafdata.zip"
+    download(BULK_URL, archive)
+    cands = find_new_indication_approvals(archive, ctx.kg, cfg.cutoff, cfg.eval_end,
+                                          cfg["groundtruth"].get("fuzzy_threshold", 0))
+    out = Path(args.out) if args.out else cfg.path("groundtruth", "manual_approvals").with_name(
+        "approvals_candidates.csv")
+    write_candidates(cands, out, matched_only=not args.all_drugs)
+    matched = sum(c.kg_drug is not None for c in cands)
+    print(f"{len(cands)} new-indication approvals between {cfg.cutoff} and {cfg.eval_end};"
+          f" {matched} matched a drug in the graph")
+    print(f"Worksheet: {out}")
+    print("Fill the 'disease' column from the FDA record (link in each row), delete the rows "
+          "that are not a new indication for an existing drug, then copy the first five columns "
+          f"into {cfg.path('groundtruth', 'manual_approvals')} and re-run build-gt.")
+
+
 def cmd_audit_mapping(ctx: Context, args) -> None:
     from .data.ctgov import ClinicalTrialsClient
-    from .data.groundtruth import TrialMapper, audit_mapping
+    from .data.groundtruth import TrialMapper, audit_mapping, score_mapping_audit
+
+    if args.score:
+        path = Path(args.score)
+        print(json.dumps(score_mapping_audit(path), indent=2))
+        return
 
     cfg, g = ctx.cfg, ctx.cfg["groundtruth"]
     ct = ClinicalTrialsClient(ctx.http("ctgov", 0.2))
@@ -350,9 +377,18 @@ def build_parser() -> argparse.ArgumentParser:
                    help="trials before this year are fetched in a single open-ended query")
     s.set_defaults(fn=cmd_build_gt)
 
+    s = sub.add_parser("fda-approvals",
+                       help="worksheet of candidate new-indication approvals after the cutoff")
+    s.add_argument("--out")
+    s.add_argument("--all-drugs", action="store_true",
+                   help="include approvals whose drug does not match the graph")
+    s.set_defaults(fn=cmd_fda_approvals)
+
     s = sub.add_parser("audit-mapping", help="sample trials to hand-check entity mapping")
     s.add_argument("-n", type=int, default=200)
     s.add_argument("--out")
+    s.add_argument("--score", metavar="FILLED_CSV",
+                   help="score a filled sheet instead of sampling: precision with a 95% interval")
     s.set_defaults(fn=cmd_audit_mapping)
 
     s = sub.add_parser("baseline", help="run a KG baseline")
