@@ -27,7 +27,7 @@ HIGHLIGHTS = ROOT / "paper" / "highlights.md"
 SUPPLEMENT = ROOT / "paper" / "supplementary.md"
 FIGURES = ROOT / "paper" / "figures"
 
-# An embedded image on its own line: dropped, so the legend below it stands alone.
+# An embedded image on its own line, which is given an explicit width on the way through.
 IMAGE_LINE = re.compile(r"^!\[[^\]]*\]\([^)]*\)\s*$", re.M)
 
 
@@ -67,7 +67,8 @@ REFERENCE = ROOT / "paper" / "reference.docx"
 def to_docx(markdown: str, out: Path, title: str) -> None:
     import pypandoc
 
-    args = ["--standalone", f"--metadata=title:{title}"]
+    args = ["--standalone", f"--metadata=title:{title}",
+            f"--resource-path={ROOT / 'paper'}"]
     if REFERENCE.exists():
         # Without this, pandoc applies Word's stock theme: Calibri body text and blue headings.
         args.append(f"--reference-doc={REFERENCE}")
@@ -85,10 +86,10 @@ def main() -> None:
     (out / "figures").mkdir(parents=True)
 
     text = DRAFT.read_text(encoding="utf-8")
-    dropped = len(IMAGE_LINE.findall(text))
-    body = IMAGE_LINE.sub("", text)
-    # Collapse the blank-line pairs the removed images leave behind.
-    body = re.sub(r"\n{3,}", "\n\n", body)
+    # Figures go up as separate files, which is what the journal requires, and are also embedded
+    # here so a reviewer can follow the argument without opening three files alongside. At 1200
+    # dpi their pixel size would overflow the text column, so each is held to the column width.
+    body, embedded = IMAGE_LINE.subn(lambda m: m.group(0).rstrip() + "{width=100%}", text)
     body = literal_reference_numbers(body)
 
     title = re.match(r"#\s*(.+)", body).group(1).strip()
@@ -111,7 +112,7 @@ def main() -> None:
                 "Supplementary material")
 
     print(f"  manuscript.docx     {(out / 'manuscript.docx').stat().st_size / 1024:7.0f} KB"
-          f"   ({len(body.split()):,} words, {dropped} embedded images removed)")
+          f"   ({len(body.split()):,} words, {embedded} figures embedded)")
     print(f"  cover_letter.docx   {(out / 'cover_letter.docx').stat().st_size / 1024:7.0f} KB")
     print(f"  figures/            {len(figs)} files")
     print(f"\n  {out}")
