@@ -1047,7 +1047,7 @@ relationships that could have appeared to influence the work reported in this pa
 
 Nhat Trinh Ngoc Minh: Conceptualization, Methodology, Software, Investigation, Data curation,
 Formal analysis, Visualization, Writing – original draft. Linh Nguyen Thi My: Supervision,
-Validation, Writing – review and editing.
+Writing – review and editing.
 
 ## Acknowledgements
 
