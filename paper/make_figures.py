@@ -52,9 +52,12 @@ COLOURS = {
 plt.rcParams.update({
     "font.size": 9, "axes.titlesize": 10, "axes.labelsize": 9,
     "axes.spines.top": False, "axes.spines.right": False,
-    # Journals ask for 600 dpi for line art (Briefings in Bioinformatics among them); 200 was
+    # Artificial Intelligence in Medicine asks for bitmapped line drawings at a minimum of
+    # 1000 dpi, and at least 3543 pixels wide for a single column or 7480 for a full page.
+    # savefig trims with bbox="tight", so the rendered width is below figsize x dpi; 1200
+    # clears the full-page figure after trimming. 200 was
     # below every target venue's floor.
-    "figure.dpi": 600, "savefig.bbox": "tight",
+    "figure.dpi": 1200, "savefig.bbox": "tight",
 })
 
 

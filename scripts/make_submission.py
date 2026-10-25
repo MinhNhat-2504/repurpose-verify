@@ -23,6 +23,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DRAFT = ROOT / "paper" / "draft.md"
 COVER = ROOT / "paper" / "cover_letter.md"
+HIGHLIGHTS = ROOT / "paper" / "highlights.md"
 FIGURES = ROOT / "paper" / "figures"
 
 # An embedded image on its own line: dropped, so the legend below it stands alone.
@@ -95,9 +96,15 @@ def main() -> None:
     to_docx(body, out / "manuscript.docx", title)
     to_docx(COVER.read_text(encoding="utf-8"), out / "cover_letter.docx", "Cover letter")
 
+    # The journal asks for one file per figure, named by its number.
     figs = sorted(FIGURES.glob("fig*"))
     for f in figs:
-        shutil.copy2(f, out / "figures" / f.name)
+        n = re.match(r"fig(\d+)", f.name).group(1)
+        shutil.copy2(f, out / "figures" / f"Figure_{n}{f.suffix}")
+
+    # Highlights go up as their own editable file, with "highlights" in the name.
+    if HIGHLIGHTS.exists():
+        to_docx(HIGHLIGHTS.read_text(encoding="utf-8"), out / "highlights.docx", "Highlights")
 
     print(f"  manuscript.docx     {(out / 'manuscript.docx').stat().st_size / 1024:7.0f} KB"
           f"   ({len(body.split()):,} words, {dropped} embedded images removed)")

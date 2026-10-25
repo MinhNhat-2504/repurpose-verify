@@ -1,13 +1,14 @@
 # Cover letter
 
-**To:** The Editors, *Patterns*
-**Re:** Submission of a Research Article
+**To:** The Editors, *Artificial Intelligence in Medicine*
+**Re:** Submission of an original research contribution
 **Title:** Can an LLM agent justify what it recommends? A mechanism-verified, time-split
 benchmark for drug repurposing
 
 Dear Editors,
 
-We submit the manuscript above for consideration as a Research Article in *Patterns*.
+We submit the manuscript above for consideration as an original research contribution in
+*Artificial Intelligence in Medicine*.
 
 Large language model agents are increasingly applied to drug repurposing, but the evaluations
 accompanying them rarely establish two things a reader needs: that the agent could not have read
@@ -42,20 +43,29 @@ then landed on supported claims and the other on false ones. A single-model resu
 retrieval-augmented faithfulness is a fact about that model, and we would not have known that
 from our first set of runs.
 
-We believe the work suits *Patterns* specifically. The journal states that papers are selected
-in part on the openness and FAIRness of the underlying data, code and models, and that is the
-axis on which this submission is strongest. All code is released under an MIT licence; the
-evaluation split is frozen in a version-controlled file rather than redrawn; every external
-response is cached, so a reported run can be re-scored or re-executed offline from archived
-evidence; every source is cited with its version and access date; and each of the 14,065 agent
-proposals is released with the mechanism path it asserted and the per-edge verification record
-behind it, so our faithfulness measurements can be recomputed without re-running a model. The
-repository carries 68 tests that need no network access, two of which assert that entity
-grounding is reproducible across interpreters, and a script that re-derives every number quoted
-in the manuscript from the stored artefacts and fails if the text disagrees — a check that
-caught several of our own errors, including a citation whose title the drafting assistant had
-reconstructed rather than verified. We describe that episode in the manuscript rather than
-quietly correcting it, since it is an instance of the failure the paper measures.
+We believe the work suits *Artificial Intelligence in Medicine* specifically. The journal asks
+for both a potential high impact in a medical domain and strong novelty of method in AI, and
+requires that the medical domain be discussed at proper depth. Drug repurposing is the medical
+domain here, and the methodological contribution is an evaluation design rather than another
+predictor: a knowledge base and literature corpus frozen at a cutoff, a ground truth built from
+what subsequently entered the clinic, and a verifier that checks every edge of a proposed
+mechanism against a graph relation or a dated abstract. The clinical reading is that an agent's
+mechanistic narrative, however fluent, is not evidence until each link in it is checked, and that
+on this benchmark the configurations whose narratives check out are not the ones that rank
+candidates best. A pipeline deployed to generate repurposing hypotheses and a pipeline deployed
+to justify them are therefore not the same system, which is a distinction that matters before
+such tools reach a clinical workflow.
+
+All code is released under an MIT licence, the evaluation split is frozen in a version-controlled
+file, every external response is cached so a reported run can be re-scored or re-executed offline
+from archived evidence, and each of the 14,065 agent proposals is released with the mechanism
+path it asserted and the per-edge verification record behind it. The repository carries 68 tests
+that need no network access, two of which assert that entity grounding is reproducible across
+interpreters, and a script that re-derives every number quoted in the manuscript from the stored
+artefacts and fails if the text disagrees — a check that caught several of our own errors,
+including a citation whose title the drafting assistant had reconstructed rather than verified.
+We describe that episode in the manuscript rather than quietly correcting it, since it is an
+instance of the failure the paper measures.
 
 We also report the limits of our own instrument: only 61.4% of the evaluation positives admit
 any mechanism path in the graph, which caps what a verified-only system can recover; about one
