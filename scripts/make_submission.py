@@ -7,6 +7,9 @@ asks that figures be supplied as separate files rather than embedded in the manu
 image references are stripped on the way through and the figure legends stay where they are, each
 numbered figure going out as its own file beside the document.
 
+Styling comes from paper/reference.docx, built by make_reference_docx.py. Run that first, or the
+document inherits Word's stock theme.
+
 Needs pandoc, which pypandoc will fetch with `pypandoc.download_pandoc()` if it is missing.
 """
 
@@ -56,11 +59,18 @@ def literal_reference_numbers(markdown: str) -> str:
     return head + "\n\n".join(out) + "\n" + tail
 
 
+REFERENCE = ROOT / "paper" / "reference.docx"
+
+
 def to_docx(markdown: str, out: Path, title: str) -> None:
     import pypandoc
 
+    args = ["--standalone", f"--metadata=title:{title}"]
+    if REFERENCE.exists():
+        # Without this, pandoc applies Word's stock theme: Calibri body text and blue headings.
+        args.append(f"--reference-doc={REFERENCE}")
     pypandoc.convert_text(markdown, "docx", format="markdown", outputfile=str(out),
-                          extra_args=["--standalone", f"--metadata=title:{title}"])
+                          extra_args=args)
 
 
 def main() -> None:
@@ -80,6 +90,8 @@ def main() -> None:
     body = literal_reference_numbers(body)
 
     title = re.match(r"#\s*(.+)", body).group(1).strip()
+    # --metadata=title already renders the title, so the heading would appear a second time.
+    body = re.sub(r"\A#[^\n]*\n+", "", body, count=1)
     to_docx(body, out / "manuscript.docx", title)
     to_docx(COVER.read_text(encoding="utf-8"), out / "cover_letter.docx", "Cover letter")
 
