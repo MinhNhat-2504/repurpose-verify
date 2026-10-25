@@ -11,29 +11,6 @@ Linh Nguyen Thi My¹ (ORCID 0000-0003-3990-312X)
 
 ---
 
-> **Draft status (2026-10-24).** Every number in this draft is measured at full scale — 200
-> evaluation diseases, two models, three LLM systems each, three knowledge-graph baselines — and
-> reproducible from the released code. `paper/check_numbers.py` re-derives each one from the stored
-> artefacts and fails if the text disagrees.
->
-> Every result is in. Section 6.4 replaces the conventional blinded rating panel with three
-> checks that need no expert rater — independent ChEMBL confirmation of the drug–target claims,
-> a stricter reading of which graph relations count as a mechanism, and post-cutoff literature
-> corroboration against matched controls. No expert rating of the proposals was carried out,
-> and none of the conclusions rests on one.
->
-> An earlier version of this draft reported a 12-disease pilot in which verification cut
-> fabricated edges 7-fold. At full scale the reduction is 2.2-fold (Section 7.3). The pilot
-> overestimated the effect by roughly three times, and a claim about citation behaviour drawn
-> from it did not survive either. Both corrections are recorded in Section 7.3 rather than
-> quietly replaced, because the discrepancy is itself a result about pilot-scale faithfulness
-> estimates.
->
-> Every reference has been resolved against an authoritative record; the audit and the one
-> citation it corrected are documented at the end of the reference list.
-
----
-
 ## Abstract
 
 **Background.** Large language model (LLM) agents are being applied to drug repurposing, but
@@ -181,7 +158,7 @@ why that join must be on identifiers and never on names.
 
 ### 3.2 Time-split ground truth
 
-We query the ClinicalTrials.gov API v2 for interventional studies with a drug or biological
+We query the ClinicalTrials.gov API v2 [13] for interventional studies with a drug or biological
 intervention, partitioned by start date: 172,939 studies beginning on or before 2021-12-31 (any
 phase) and 34,595 beginning afterwards with a maximum phase of 2, 3 or 4.
 
@@ -394,7 +371,8 @@ therefore use three checks that are either automated or require no pharmacologic
 **(a) Independent confirmation of drug–target claims.** The first edge of every path is a claim
 about a drug's protein target, accepted by the verifier because PrimeKG contains it. We re-check
 those edges against ChEMBL's mechanism-of-action curation, a pipeline the agent never queried.
-Drugs are mapped DrugBank → ChEMBL through UniChem by chemical structure (InChI), never by name,
+Drugs are mapped DrugBank [14] → ChEMBL [15] through UniChem [16] by chemical structure (InChI),
+never by name,
 for the reason given in Section 4.2. ChEMBL records no mechanism for many drugs; that is reported
 as coverage, not counted as disagreement. The two resources are not fully independent — both
 curate from labels and literature — so this is corroboration, not arbitration.
@@ -728,9 +706,10 @@ are often not the therapeutic target.
 
 ![Edges by graph role and their independent confirmation](figures/fig3_moa_by_role.png)
 
-**Figure 3.** Edges asserted by verified proposals, by the role PrimeKG assigns them (left), and
-the share each role's edges that ChEMBL confirms as a mechanism target (right). Rates are
-computed over the edges on which ChEMBL has an opinion. No enzyme, transporter or carrier edge
+**Figure 3.** Asserted drug–gene edges by graph role, and their ChEMBL confirmation rate.
+Left: the role PrimeKG assigns each edge asserted by a verified proposal. Right: the share of
+each role's edges that ChEMBL confirms as a mechanism target, computed over the edges on which
+ChEMBL has an opinion. No enzyme, transporter or carrier edge
 is confirmed, which is what those roles mean.
 
 Not one edge whose KG role is enzyme, transporter or carrier is confirmed as a mechanism target,
@@ -982,7 +961,7 @@ knowledge-graph embedding baselines; an OpenAI-compatible or Anthropic endpoint 
 **RRID / archive.** `[GigaDB DOI to be assigned on acceptance]`
 
 The data supporting the results of this article are available in the GigaDB repository
-[15]: `[GigaDB DOI to be assigned on acceptance]`.
+[17]: `[GigaDB DOI to be assigned on acceptance]`.
 
 The repository builds the knowledge graph and the time-split ground truth from public sources and
 caches every external response, so a reported run can be re-scored, or re-executed offline, from
@@ -1065,8 +1044,13 @@ exists because those resources can be queried, cached and cited.
 
 **Use of large language models.** An LLM-based coding assistant was used during implementation of
 the software and in preparing the manuscript text. The authors verified all code, re-derived
-every reported number from the stored artefacts with `paper/check_numbers.py`, and checked every
-reference against an authoritative record (see the reference audit note). The authors take full
+every reported number from the stored artefacts with `paper/check_numbers.py`, and resolved every
+reference against an authoritative record — Crossref, PubMed, arXiv, OpenAlex or the publisher
+page — rather than a secondary summary. That last check mattered: one citation the assistant had
+produced during drafting gave a real arXiv identifier under a title that was not its own, and it
+survived two revisions before the audit caught it. We disclose it because it is precisely the
+failure this manuscript sets out to measure, and because it shows the measurement applies to
+work written with these tools and not only to the agents under test. The authors take full
 responsibility for the content. The entity-mapping audit in Section 3.2 was carried out by an
 author with the same assistance; it is not an independent or blinded assessment, and the judged
 sheet is released so that it can be checked.
@@ -1108,27 +1092,15 @@ sheet is released so that it can be checked.
 14. Wishart DS, Feunang YD, Guo AC, Lo EJ, et al. DrugBank 5.0: a major update to the DrugBank
     database for 2018. *Nucleic Acids Research* 2018;46(D1):D1074–D1082.
     doi:10.1093/nar/gkx1037
-15. Trinh NNM, Nguyen LTM. Supporting data for "Can an LLM agent justify what it recommends? A
+15. Zdrazil B, Felix E, Hunter F, Manners EJ, et al. The ChEMBL Database in 2023: a drug
+    discovery platform spanning multiple bioactivity data types and time periods. *Nucleic Acids
+    Research* 2024;52(D1):D1180–D1192. doi:10.1093/nar/gkad1004
+16. Chambers J, Davies M, Gaulton A, Hersey A, et al. UniChem: a unified chemical structure
+    cross-referencing and identifier tracking system. *Journal of Cheminformatics* 2013;5:3.
+    doi:10.1186/1758-2946-5-3
+17. Trinh NNM, Nguyen LTM. Supporting data for "Can an LLM agent justify what it recommends? A
     mechanism-verified, time-split benchmark for drug repurposing". *GigaScience Database* 2026.
     `[DOI to be assigned on acceptance]`
-
-> **Reference audit (2026-10-21).** Every entry above was resolved against an authoritative
-> record — Crossref, PubMed, arXiv, OpenAlex, the NIPS 2013 proceedings index or the publisher
-> page — rather than a secondary summary. The audit changed three entries:
->
-> * **Reference 3 was wrong.** An earlier draft cited arXiv:2311.12670 under the title "On the
->   reliability of drug–target interaction benchmarking and data leakage", which is not its
->   title. The identifier belongs to de la Fuente *et al.*, "Towards a more inductive world for
->   drug repurposing approaches". The claim it supports — that transductive DTI evaluation
->   inflates performance — is in that paper, but the citation as written was a fabrication of the
->   kind this manuscript measures, and it survived two drafts. It is recorded here rather than
->   quietly corrected.
-> * **Reference 11** now cites the peer-reviewed version in *Genetics* (2026) in place of the
->   2022 medRxiv preprint.
-> * **Reference 6** gained the volume and pages that were marked for checking.
->
-> One wording check also came out of the audit: reference 2's abstract says "over fifty dataset
-> configurations", so Section 2 says that rather than a precise count taken from a summary.
 
 ## Appendix A Reproduction
 

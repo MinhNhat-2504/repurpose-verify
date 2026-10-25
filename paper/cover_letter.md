@@ -17,15 +17,15 @@ questions and ran it end to end.
 Every source an agent may query is frozen at 31 December 2021 — a knowledge-graph snapshot of
 that period and PubMed restricted by publication date — and systems are scored on drug–disease
 pairs whose first phase 2 or later trial began afterwards. From 172,939 pre-cutoff and 34,595
-post-cutoff trials we obtain 2,776 pairs that were unknown at the cutoff by three independent
+post-cutoff trials we obtain 2,731 pairs that were unknown at the cutoff by three independent
 criteria. Each proposal must carry a mechanism path, and a verifier checks every edge against
 graph relations or a cited pre-cutoff abstract.
 
 Three findings seem to us worth the journal's attention, and two of them are negative.
 
 First, **faithfulness and accuracy are decoupled**. Verifying each edge and returning the
-rejected proposals for one revision round reduces one model's fabricated-edge rate from 0.046 to
-0.018, while leaving its ranking statistically unchanged (ΔMRR 0.0004, *p* = 0.70). In both
+rejected proposals for one revision round reduces one model's fabricated-edge rate from 0.039 to
+0.018, while leaving its ranking statistically unchanged (ΔMRR 0.0004, *p* = 0.72). In both
 models we tested, the least verifiable configuration ranks at least as well as the most
 carefully grounded one.
 
@@ -35,8 +35,8 @@ significantly better in both models. We report this plainly, because a benchmark
 is to make claims checkable should not exempt its own.
 
 Third, and only visible because we ran two models, **what retrieval does to a model's
-fabrication rate reverses sign between them**. The same tools took `qwen2.5-7b` from 0.211
-fabricated mechanism edges to 0.046, and `llama3.1-8b` from 0.289 to 0.944. Identifiers do not
+fabrication rate reverses sign between them**. The same tools took `qwen2.5-7b` from 0.208
+fabricated mechanism edges to 0.039, and `llama3.1-8b` from 0.290 to 0.942. Identifiers do not
 make claims true; they make claims checkable, moving errors out of unverifiable prose. One model
 then landed on supported claims and the other on false ones. A single-model result about
 retrieval-augmented faithfulness is a fact about that model, and we would not have known that
@@ -53,7 +53,7 @@ several of our own errors, including a citation whose title we had reconstructed
 verified. We describe that episode in the manuscript rather than quietly correcting it, since it
 is an instance of the failure the paper measures.
 
-We also report the limits of our own instrument: only 59.3% of the evaluation positives admit
+We also report the limits of our own instrument: only 61.4% of the evaluation positives admit
 any mechanism path in the graph, which caps what a verified-only system can recover; about one
 in nine accepted mechanisms runs through a drug's metabolising enzyme rather than a target; and
 an earlier 12-disease pilot overstated the effect of verification threefold, in the direction
