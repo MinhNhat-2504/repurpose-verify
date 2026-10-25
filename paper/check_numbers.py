@@ -38,6 +38,8 @@ SECOND_PROBE = ROOT / "runs" / "probes" / "llama31-8b.jsonl"
 SECOND_EXTERNAL = ROOT / "runs" / "report_external_llama31-8b" / "report.json"
 # Written by `audit-mapping --score` once the sheet is filled; absent until then.
 MAPPING_SCORE = ROOT / "runs" / "mapping_audit_score.json"
+# Written by scripts/measure_candidate_eligibility.py (Section 7.6).
+ELIGIBILITY = ROOT / "runs" / "report_external" / "candidate_eligibility.json"
 # Written by scripts/measure_grounding_correction.py (Section 7.7).
 GROUNDING = ROOT / "data" / "processed" / "groundtruth" / "grounding_correction.json"
 # The hand-curated approvals and the worksheet they were judged from (Section 7.8).
@@ -300,6 +302,23 @@ def collect_claims() -> list[tuple[str, str, str]]:
                     (f"{kind} mapping precision", _fmt(entry["precision"], 3), src),
                     (f"{kind} mapping judged", str(entry["judged"]), src),
                 ]
+
+    if ELIGIBILITY.exists():
+        e = json.loads(ELIGIBILITY.read_text(encoding="utf-8"))
+        src = ELIGIBILITY.name
+        by_p = e["proposals_by_status"]
+        opinion = by_p["approved"] + by_p["reached a clinical trial"] + by_p["preclinical"]
+        claims += [
+            ("verified proposals screened for phase", f"{e['verified_proposals']:,}", src),
+            ("distinct compounds in them", f"{e['distinct_drugs']:,}", src),
+            ("proposals with a recorded phase", f"{opinion:,}", src),
+            ("proposals that stopped at a trial", f"{by_p['reached a clinical trial']:,}", src),
+            ("proposals that stayed preclinical", str(by_p["preclinical"]), src),
+            ("proposals with no phase on record",
+             f"{e['verified_proposals'] - opinion:,}", src),
+            ("never-approved share of those with a phase",
+             _fmt(100 * (opinion - by_p["approved"]) / opinion, 1) + "%", src),
+        ]
 
     if GROUNDING.exists():
         g = json.loads(GROUNDING.read_text(encoding="utf-8"))

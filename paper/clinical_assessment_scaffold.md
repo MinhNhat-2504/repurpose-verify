@@ -1,28 +1,29 @@
-# Clinical assessment — scaffold for NTML
+# Clinical assessment — optional strengthening, for NTML
 
-## Why this section is needed
+## Status: no longer blocking
 
-*Artificial Intelligence in Medicine* requires that a paper discuss its medical domain "at the
-proper depth, from both the technical and the medical points of view", and states that "the
-inclusion of a clinical assessment of the usefulness and potential impact of the submitted work
-is strongly recommended". The manuscript is strong on the technical side and currently says
-almost nothing from the pharmacological one. This is the most likely reason an editor would
-desk-reject it.
+*Artificial Intelligence in Medicine* states that a clinical assessment of usefulness and impact
+is strongly recommended. **Section 9 of the manuscript now provides one**, written as an
+author-level assessment grounded in the paper's own measurements, and explicitly not claiming to
+be an expert rating of individual proposals. The submission is defensible without any further
+input.
 
-## What is already written, and what is not
+What follows would strengthen it, not rescue it. If you have no time, submit as it stands.
 
-Everything below marked **[drafted]** is written from the paper's own measurements and needs only
-a yes/no from you. Everything marked **[NTML]** is a pharmacological judgement that an author who
-is not a pharmacist should not make. There are four of them, and a 12-item checklist.
+## The one thing worth 20 minutes
 
-Estimated time: **20–30 minutes.** If you have less, Q1 and Q2 are the two that matter; the
-section can be shortened to those.
+Section 9 says a verified mechanism does not make the compound a medicine, and supports it with
+a measurement: where ChEMBL records a development phase, 41.1% of verified proposals name a
+compound that never reached approval. That is checkable and needs no pharmacologist.
 
-A note on consistency: Section 6.4 of the manuscript argues that no expert *rated individual
-proposals*, and replaces a plausibility panel with automated checks. That stands. This section is
-a different claim — a judgement about whether the *work* is useful and what it would take to use
-it — which is an author-level statement, not a per-proposal rating. The drafted text says so
-explicitly so that a reviewer does not read a contradiction.
+What a pharmacologist adds is the judgement the measurement cannot reach — whether the proposals
+that *do* name approved drugs are pharmacologically sensible. `paper/clinical_review_sample.md`
+holds twelve accepted proposals drawn at random, each with its mechanism chain written out and a
+tick box. If a handful turn out to be implausible for reasons the automated checks cannot see,
+that is a finding worth a paragraph in Section 9 and worth your co-authorship on it.
+
+The four questions below remain as prompts if you want to go further; the drafted answers in
+Section 9 were written from the measurements and can be corrected rather than composed.
 
 ---
 

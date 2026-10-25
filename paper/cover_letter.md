@@ -45,7 +45,14 @@ from our first set of runs.
 
 We believe the work suits *Artificial Intelligence in Medicine* specifically. The journal asks
 for both a potential high impact in a medical domain and strong novelty of method in AI, and
-requires that the medical domain be discussed at proper depth. Drug repurposing is the medical
+requires that the medical domain be discussed at proper depth. Section 9 is given to that
+reading, and it is grounded in measurement rather than impression: repurposing means finding a
+new indication for an existing drug, so we screened every verified proposal on whether its
+compound is one. Where ChEMBL records a development phase, 41.1% name a compound that never
+reached approval — reagents and research chemicals carrying drug–protein edges because the
+underlying graph draws its drug nodes from DrugBank. A proposal can ground, verify and still be
+unactionable because the object it names was never a medicine, which is a third axis on which
+faithfulness and usefulness come apart and the one that bites soonest in practice. Drug repurposing is the medical
 domain here, and the methodological contribution is an evaluation design rather than another
 predictor: a knowledge base and literature corpus frozen at a cutoff, a ground truth built from
 what subsequently entered the clinic, and a verifier that checks every edge of a proposed

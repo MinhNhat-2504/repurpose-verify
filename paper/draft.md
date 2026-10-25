@@ -29,10 +29,10 @@ from 0.290 to 0.942. Verification leaves ranking unchanged in both (ΔMRR 0.0004
 0.64), and **no configuration of either model matches a popularity baseline** (MRR 0.030 against
 0.006–0.021). A leakage probe with controls finds no post-cutoff signal above its floor.
 
-**Conclusions.** Faithfulness and accuracy are decoupled: in both models the least verifiable
-configuration ranks best. Verification buys checkability, not discovery, and grounding's effect on
-fabrication is a property of the model, so single-model evidence is unsafe. Only 61.4% of
-positives admit any mechanism path, capping what a verified-only system can recover.
+**Conclusions.** Faithfulness and usefulness are decoupled: the least verifiable configuration
+ranks best, and where ChEMBL records a development phase, 41.1% of verified proposals name a
+compound that never reached approval. Verification buys checkability, not discovery, and
+grounding's effect on fabrication is a property of the model, so single-model evidence is unsafe.
 
 **Availability.** Code, splits, cached evidence and reports: https://github.com/MinhNhat-2504/repurpose-verify
 
@@ -708,6 +708,28 @@ What this check does establish is a negative result that the ranking metrics sup
 mechanism-verified pipeline over this knowledge base did not surface drug–disease pairs that the
 subsequent literature went on to discuss, relative to comparable drugs.
 
+**A verified mechanism does not make the compound a drug.** Repurposing means finding a new
+indication for a drug that already exists, so a proposal naming a compound that has never been
+approved is not a candidate for the task however cleanly its mechanism checks out. We measured
+this rather than leaving it to impression. Across the two verified configurations, 2,404 accepted
+proposals name 1,475 distinct compounds; each was mapped DrugBank → ChEMBL through UniChem and
+ChEMBL's highest development phase read for it. ChEMBL records a phase for 1,061 of the
+proposals, and of those **41.1% name a compound that never reached approval** — 416 that stopped
+at a clinical trial and 20 that never left preclinical work. The compounds in question are not
+near-misses: they include plain reagents and research chemicals such as 2,4,6-tribromophenol and
+1-naphthylamine-5-sulfonic acid, which carry drug–protein edges in the graph because PrimeKG
+draws its drug nodes from DrugBank, and DrugBank indexes experimental compounds alongside
+marketed ones. For the remaining 1,343 proposals ChEMBL has no phase on record, which is absence
+of evidence rather than evidence of absence; the 41.1% is therefore computed only where the
+question can be answered.
+
+This is a third axis on which faithfulness and usefulness come apart, and the one that bites
+soonest in practice. A proposal can ground, verify and still be unactionable, because the object
+it names was never a medicine. Screening on development phase is trivial to add — the measurement
+above is the screen — and we report it as a defect of the agents' output rather than fixing it
+silently, because a pipeline that needs such a filter bolted on is telling the reader something
+about what its mechanism check was and was not establishing.
+
 ### 7.7 Two defects in the benchmark's own construction
 
 A benchmark that scores others on whether their claims survive checking has to report what
@@ -841,7 +863,59 @@ efficacy; tier-stratified results (`--min-tier phase3`, `approved`) are provided
 And the 61.4% reachability ceiling means a mechanism-verified system is scored against a
 knowledge base that cannot express the mechanism for two of every five positives.
 
-## 9 Limitations
+## 9 Clinical relevance
+
+This section states what the work offers a clinical reader and what it does not. It is an
+assessment by the authors of the usefulness and potential impact of the method, grounded in the
+measurements reported above; it is not an expert rating of individual proposals, and Section 6.4
+explains why no such rating was carried out.
+
+**What the benchmark offers is a triage procedure, not a drug list.** A repurposing hypothesis
+produced by a language-model agent arrives as a narrative. The verifier turns that narrative into
+assertions that can each be checked: that the drug resolves to a known compound, that it has a
+recorded interaction with a named protein, that the protein is associated with the disease, and
+that any supporting citation predates the knowledge cutoff. What survives is not a validated
+hypothesis. It is one whose stated reasoning is internally checkable, which is the least a
+reviewer needs before laboratory or clinical resource is committed to it.
+
+**On present evidence these agents do not earn a place in candidate generation.** The
+configurations whose mechanisms check out do not rank candidates better than the configuration
+whose mechanisms do not: the closed-book agent ranks at least as well as the grounded ones in
+both models, and no configuration of either model matches the accuracy of ranking drugs by how
+many indications they already carry. Grounding's effect on fabrication also reversed sign between
+two open-weight models of the same size class, so a team cannot carry a published hallucination
+rate across to the model it intends to deploy. The case these results support is for auditing a
+hypothesis, not for producing one.
+
+**Three things a verified mechanism does not establish.** First, it does not establish that the
+compound is a medicine: of the verified proposals for which ChEMBL records a development phase,
+41.1% name something that never reached approval (Section 7.6). Second, it does not establish
+pharmacological direction. PrimeKG's drug–protein edges record that an interaction has been
+reported, not whether the drug inhibits or activates the target, so a path can be fully supported
+while describing modulation in the wrong direction for the disease biology. Third, it does not
+establish exposure: nothing in the graph speaks to whether the drug reaches the relevant tissue
+at a concentration achievable at a tolerated dose, nor to route, protein binding or interaction
+burden. Section 7.6 adds a fourth, narrower caveat — roughly one accepted mechanism in nine runs
+through a metabolising enzyme, transporter or carrier rather than a target, which is a
+pharmacokinetic relationship presented as a pharmacodynamic one.
+
+**Where the ceiling falls is itself a clinical problem.** Only 61.4% of the positives admit any
+mechanism path in this knowledge base, and the diseases that admit none are those whose biology
+the graph represents poorly. Those are disproportionately the rare and the neglected, which is
+where repurposing is most often proposed as the answer. A verified-only pipeline is therefore
+weakest exactly where the clinical argument for repurposing is strongest, and that is a property
+of the knowledge base rather than of any model.
+
+**What would have to hold before such a pipeline informed a clinical decision.** At minimum: a
+mechanism whose direction matches the disease biology; evidence of exposure at the target site at
+a tolerated dose; a safety profile compatible with the intended population; and a route from
+hypothesis to a testable design. None of these is supplied by mechanism verification as defined
+here, and we do not claim that the proposals surviving it are clinically plausible. What we claim
+is narrower and, we think, more useful: that an unverifiable mechanistic narrative can now be
+told apart from a checkable one, and that on this benchmark the systems producing checkable ones
+are not the systems producing better candidates.
+
+## 10 Limitations
 
 * PrimeKG's constituent resources have differing release dates around 2021, so the snapshot
   approximates the cutoff rather than matching it exactly.
@@ -896,7 +970,7 @@ knowledge base that cannot express the mechanism for two of every five positives
 * The literature control matches on knowledge-graph degree rather than publication volume, which
   under-corrects for how much a drug is written about (Section 7.6).
 
-## 10 Data and code availability
+## 11 Data and code availability
 
 All code is available at https://github.com/MinhNhat-2504/repurpose-verify under an MIT licence.
 It is platform independent, requires Python 3.10 or later with numpy, pandas, scipy, requests,
@@ -913,7 +987,7 @@ release: the frozen evaluation split and the curated files of Table S5, the deri
 (`positives.csv`, `known_pairs.csv.gz`, the eval-disease table and the build report), every run's
 proposals with their full verification records and token accounting, the leakage-probe responses,
 and the generated reports and figures. Those 24 GPU-hours of model output are the part of this
-work that cannot be regenerated: the agents are sampling, and Section 9 notes that the same model
+work that cannot be regenerated: the agents are sampling, and Section 10 notes that the same model
 and prompt returned different proposals on a second pass.
 
 What the deposit does *not* duplicate is the third-party data behind it. Our own artefacts are
@@ -938,7 +1012,7 @@ iteration order and that it is identical across interpreters started with differ
 These curated files carry the judgements this paper rests on, and are released with it; the
 derived data under `data/processed/` is regenerable from them and is not:
 
-## 11 Abbreviations
+## 12 Abbreviations
 
 CT.gov: ClinicalTrials.gov; DTI: drug–target interaction; HGNC: HUGO Gene Nomenclature
 Committee; KG: knowledge graph; LLM: large language model; MoA: mechanism of action;
