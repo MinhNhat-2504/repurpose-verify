@@ -1,13 +1,13 @@
 # Cover letter
 
-**To:** The Editors, *GigaScience*
-**Re:** Submission of a Research article
+**To:** The Editors, *Patterns*
+**Re:** Submission of a Research Article
 **Title:** Can an LLM agent justify what it recommends? A mechanism-verified, time-split
 benchmark for drug repurposing
 
 Dear Editors,
 
-We submit the manuscript above for consideration as a Research article in *GigaScience*.
+We submit the manuscript above for consideration as a Research Article in *Patterns*.
 
 Large language model agents are increasingly applied to drug repurposing, but the evaluations
 accompanying them rarely establish two things a reader needs: that the agent could not have read
@@ -42,16 +42,20 @@ then landed on supported claims and the other on false ones. A single-model resu
 retrieval-augmented faithfulness is a fact about that model, and we would not have known that
 from our first set of runs.
 
-We believe the work suits *GigaScience* specifically. The contribution is a reusable resource
-and a measurement design rather than a new predictor, and the journal's requirements are ones
-the project already meets: all data and code are released under an MIT licence, every external
-response is cached so a reported run can be re-scored or re-executed offline from archived
-evidence, and all sources are cited with versions and access dates. The repository carries 58
-tests that need no network access, and a script that re-derives every number quoted in the
-manuscript from the stored artefacts and fails if the text disagrees — a check that caught
-several of our own errors, including a citation whose title we had reconstructed rather than
-verified. We describe that episode in the manuscript rather than quietly correcting it, since it
-is an instance of the failure the paper measures.
+We believe the work suits *Patterns* specifically. The journal states that papers are selected
+in part on the openness and FAIRness of the underlying data, code and models, and that is the
+axis on which this submission is strongest. All code is released under an MIT licence; the
+evaluation split is frozen in a version-controlled file rather than redrawn; every external
+response is cached, so a reported run can be re-scored or re-executed offline from archived
+evidence; every source is cited with its version and access date; and each of the 14,065 agent
+proposals is released with the mechanism path it asserted and the per-edge verification record
+behind it, so our faithfulness measurements can be recomputed without re-running a model. The
+repository carries 68 tests that need no network access, two of which assert that entity
+grounding is reproducible across interpreters, and a script that re-derives every number quoted
+in the manuscript from the stored artefacts and fails if the text disagrees — a check that
+caught several of our own errors, including a citation whose title the drafting assistant had
+reconstructed rather than verified. We describe that episode in the manuscript rather than
+quietly correcting it, since it is an instance of the failure the paper measures.
 
 We also report the limits of our own instrument: only 61.4% of the evaluation positives admit
 any mechanism path in the graph, which caps what a verified-only system can recover; about one
@@ -61,8 +65,8 @@ that favoured our method.
 
 The manuscript is original, has not been published elsewhere, and is not under consideration by
 another journal. Both authors have read and approved the submission and declare no competing
-interests. The supporting data will be deposited in GigaDB and the identifier added at
-acceptance.
+interests. The supporting data are prepared for deposit in a public repository and the
+identifier will be added at acceptance.
 
 We would be glad to supply any further material the editors or reviewers require.
 

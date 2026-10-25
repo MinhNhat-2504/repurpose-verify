@@ -1,15 +1,14 @@
-"""Assemble the GigaDB deposit: the artefacts that are ours to release under CC0.
+"""Assemble the data deposit: the artefacts that are ours to release.
 
-    python scripts/make_gigadb_deposit.py [--out dist/gigadb]
+    python scripts/make_data_deposit.py [--out dist/deposit] [--licence "CC BY 4.0"]
 
-GigaDB waives rights in its datasets with CC0, which we can only apply to data we created. So
-this packages the curated inputs, the derived ground truth, the model runs and the reports, plus
-the two caches that are works of the United States government, and leaves out the third-party
-sources - each identified by version and access date in the manuscript instead, and refetchable
-with `download all`.
+A repository licence is only ours to grant over data we created, so this packages the curated
+inputs, the derived ground truth, the model runs and the reports, plus the two caches that are
+works of the United States government, and leaves out the third-party sources - each identified
+by version and access date in the manuscript instead, and refetchable with `download all`.
 
 Writes one archive per logical group, a MANIFEST.tsv carrying every member file with its size and
-SHA-256, and a README the curators can read before the metadata wizard.
+SHA-256, and a README stating what is included and what is not.
 """
 
 from __future__ import annotations
@@ -56,7 +55,8 @@ EXCLUDED = [
     ("data/raw/drugsatfda", "Drugs@FDA bulk release, refetchable from fda.gov"),
     ("data/processed/kg", "a re-encoding of PrimeKG, so a derivative of it; `build-kg` rebuilds "
                           "it in minutes from the source above"),
-    ("data/cache/chembl", "ChEMBL, distributed under CC BY-SA 3.0, which CC0 cannot absorb"),
+    ("data/cache/chembl", "ChEMBL, distributed under CC BY-SA 3.0, whose share-alike terms we "
+                          "cannot relicense"),
     ("data/cache/pubmed", "PubMed records whose abstracts carry publisher copyright"),
     ("data/cache/pubmed_post", "as above, the post-cutoff literature queries"),
     ("runs/complex/model.pt", "a 132 MB PyTorch checkpoint, which is a Python pickle rather than "
@@ -76,7 +76,9 @@ def sha256(path: Path) -> str:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--out", default="dist/gigadb")
+    ap.add_argument("--out", default="dist/deposit")
+    ap.add_argument("--licence", default="CC BY 4.0",
+                    help="the licence the deposit is released under; GigaDB requires CC0")
     args = ap.parse_args()
     out = (ROOT / args.out).resolve()
     if out.exists():
@@ -115,11 +117,12 @@ def main() -> None:
               "## Archives", ""]
     for name, n, size, description in summary:
         readme += [f"### `{name}.tar.gz`  ({n} files, {size / 1e6:.1f} MB)", "", description, ""]
-    readme += ["## Not included, and why", "",
-               "GigaDB waives rights in its datasets with CC0, which applies only to data we "
-               "created. These sources are therefore identified by version and access date in "
-               "the manuscript rather than redistributed here; "
-               "`python -m repurpose_verify download all` refetches them into the same layout.",
+    readme += [f"Everything here is released under {args.licence}.", "",
+               "## Not included, and why", "",
+               f"{args.licence} applies only to data we created. These sources are therefore "
+               "identified by version and access date in the manuscript rather than "
+               "redistributed here; `python -m repurpose_verify download all` refetches them "
+               "into the same layout.",
                ""]
     for rel, why in EXCLUDED:
         readme += [f"* `{rel}` — {why}"]

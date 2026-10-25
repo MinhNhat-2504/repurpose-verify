@@ -4,7 +4,7 @@ Fields the GigaDB wizard asks for. Paste them in when the database team makes co
 here needs to be settled before the manuscript is submitted, because the dataset DOI is assigned
 on acceptance. Build the files first with:
 
-    python scripts/make_gigadb_deposit.py
+    python scripts/make_data_deposit.py --licence CC0
 
 That writes `dist/gigadb/` — six archives, a `MANIFEST.tsv` with sizes and SHA-256 sums, and a
 `README.md` restating the sections below.
