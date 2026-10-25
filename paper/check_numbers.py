@@ -21,6 +21,8 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
 DRAFT = ROOT / "paper" / "draft.md"
+# Secondary tables live here, so a number is checked wherever the submission puts it.
+SUPPLEMENT = ROOT / "paper" / "supplementary.md"
 GT_REPORT = ROOT / "data" / "processed" / "groundtruth" / "report.json"
 PROBE = ROOT / "runs" / "probes" / "qwen25-7b.jsonl"
 SUMMARIES = {
@@ -377,6 +379,8 @@ def main() -> int:
             print(f"  {p.relative_to(ROOT)}")
         return 2
     text = DRAFT.read_text(encoding="utf-8")
+    if SUPPLEMENT.exists():
+        text += "\n" + SUPPLEMENT.read_text(encoding="utf-8")
     # Numbers are written with thousands separators in prose and without in tables.
     haystack = text + "\n" + re.sub(r"(?<=\d),(?=\d)", "", text)
     claims = collect_claims()
@@ -400,7 +404,7 @@ def main() -> int:
         return 1
 
     if failures:
-        print(f"\n{len(failures)} claim(s) in draft.md are not supported:")
+        print(f"\n{len(failures)} claim(s) in the manuscript are not supported:")
         for label, expected, source in failures:
             print(f"  {label}: expected '{expected}' (from {source})")
         return 1

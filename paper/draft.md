@@ -198,6 +198,8 @@ contribute, so that combination arms do not create spurious pairs.
 | Model weights | Open-weight models with documented cutoffs; closed-book probe with controls; masked re-scoring | Section 7.4 |
 | Verifier evidence | Open Targets (a live release containing post-cutoff evidence) disabled by default; reported separately when enabled | Off in all reported runs |
 
+**Table 1.** Leakage channels, the control applied to each, and where it is audited.
+
 ### 3.4 Evaluation diseases and the verifiable ceiling
 
 Of 1,143 diseases carrying at least one positive, 417 have no `disease_protein` edge at all. No
@@ -220,7 +222,7 @@ part of reporting the benchmark: without it, a verified-only system's recall is 
 A proposal is a drug plus a path: a chain of (source, relation, target) edges beginning at the
 drug, passing through at least one gene or protein, and ending at the queried disease (or a
 graph-adjacent disease), of length 2 to 4 edges. Optional PubMed identifiers may be attached per
-edge. Each edge receives one status:
+edge. Each edge receives one status (Table 2):
 
 | Status | Meaning |
 |---|---|
@@ -231,6 +233,8 @@ edge. Each edge receives one status:
 | `unsupported` | both endpoints resolve, no admissible evidence links them |
 | `ungrounded` | an endpoint resolves to no node of an acceptable type |
 | `ambiguous` | an endpoint's name matches several nodes and nothing disambiguates them |
+
+**Table 2.** Edge statuses assigned by the verifier.
 
 A proposal is **verified** when the drug grounds, the path is a well-formed chain from drug to
 disease through at least one gene, and every edge is supported. Excluding drug–disease relations
@@ -295,7 +299,8 @@ negative sampling and scored on the `indication` relation; we report ComplEx (di
 epochs, 5 minutes on one RTX 4060). An importer accepts external rankings, e.g. TxGNN [6], as CSV
 so that published systems can be placed on the same split.
 
-**LLM systems**, all with the same prompt and tool budget (16 turns, top-20 output):
+**LLM systems**, all with the same prompt and tool budget (16 turns, top-20 output), are the
+four configurations of Table 3:
 
 | System | Retrieval | Verification |
 |---|---|---|
@@ -303,6 +308,8 @@ so that published systems can be placed on the same split.
 | RAG, no verifier | graph tools + date-capped PubMed | none |
 | RAG + verify-filter | same | unverified proposals demoted (or dropped) |
 | RAG + verify-revise | same | rejected proposals returned once for repair, then filtered |
+
+**Table 3.** The four agent configurations, which differ only in retrieval and verification.
 
 Tools are: `search_entities`, `get_neighbors`, `find_mechanism_paths` (hub-penalised path
 enumeration), `rank_candidate_drugs` (the proximity screen, with known indications removed) and
@@ -377,6 +384,8 @@ released proposals, each of which carries its full verification record.
 
 ### 7.1 The benchmark
 
+Table 4 summarises what the construction of Sections 3 and 4 produced.
+
 | Quantity | Value |
 |---|---|
 | Graph | 129,375 nodes; 4,050,249 edges; 7,957 drugs; 17,080 diseases |
@@ -388,7 +397,7 @@ released proposals, each of which carries its full verification record.
 | Leakage audit | **0** positives carry a drug–disease edge in the snapshot |
 | Mechanism-reachable positives | **335 / 546 (61.4%)**; 70 positives' drugs have no recorded target |
 
-**Table 1.** Benchmark composition at cutoff 2021-12-31.
+**Table 4.** Benchmark composition at cutoff 2021-12-31.
 
 Three features deserve emphasis. First, 58% of the post-cutoff pairs we found were discarded as
 already known — the step that most distinguishes a time split from a random one. Second, the
@@ -409,14 +418,8 @@ and all reported metrics are over the remaining 194.
 
 ### 7.2 Knowledge-graph baselines
 
-| System | MRR | Hit@1 | Hit@5 | Hit@10 | Hit@20 |
-|---|---|---|---|---|---|
-| Popularity | 0.030 [0.015, 0.048] | 0.010 | 0.057 | 0.077 | 0.088 |
-| Network proximity | 0.012 [0.005, 0.021] | 0.000 | 0.021 | 0.036 | 0.057 |
-| ComplEx | 0.007 [0.003, 0.011] | 0.000 | 0.000 | 0.015 | 0.041 |
-
-**Table 2.** Baselines over the 194 evaluation diseases and 546 positives; 95% CI from a
-disease-level bootstrap. Full table with Recall@K in `runs/report_baselines/`.
+Over the 194 evaluation diseases and 546 positives, popularity reaches MRR 0.030 [0.015, 0.048],
+network proximity 0.012 and ComplEx 0.007 (Table S1).
 
 The absolute numbers are low: the task is to rank ~8,000 drugs for an average of 2.8 unseen
 positives per disease, and the positives are, by construction, pairs that nothing in the 2021
@@ -440,7 +443,7 @@ probed model claims to know.
 | llama3.1-8b | RAG, no verifier | 1,051 | 0.000 | **0.942** | 0.024 | 0.850 |
 | llama3.1-8b | RAG + verify-revise | 955 | 0.030 | **0.899** | 0.002 | 0.845 |
 
-**Table 3.** Faithfulness over the 194 evaluation diseases, 14,065 proposals from two models under
+**Table 5.** Faithfulness over the 194 evaluation diseases, 14,065 proposals from two models under
 identical prompts, tools and budgets. Only `qwen2.5-7b`'s unverified configuration cited
 anything: 20 PubMed identifiers, all invalid.
 
@@ -456,7 +459,7 @@ anything: 20 PubMed identifiers, all invalid.
 | llama3.1-8b | RAG, no verifier | 0.006 | 0.010 | 0.021 | 0.608 | 4 | 1,844,408 |
 | llama3.1-8b | RAG + verify-revise | 0.006 | 0.010 | 0.021 | 0.629 | 4 | 3,391,410 |
 
-**Table 4.** Ranking over the same 194 diseases and 546 positives. "Correct hits" counts
+**Table 6.** Ranking over the same 194 diseases and 546 positives. "Correct hits" counts
 positives recovered in a top-20 list, summed over diseases.
 
 ![Faithfulness against accuracy for all six systems](figures/fig1_faithfulness_vs_accuracy.png)
@@ -559,18 +562,7 @@ their top 20 against popularity's eleven (`runs/report_full_phase3/`). Probe-mas
 
 ### 7.4 Weight-level leakage
 
-| Model | Item | n | Said yes | Flagged as post-cutoff knowledge |
-|---|---|---|---|---|
-| qwen2.5-7b | Ground-truth positives | 565 | 0.117 | **0.021** |
-| qwen2.5-7b | Known at the cutoff (positive control) | 200 | 0.310 | 0.050 |
-| qwen2.5-7b | Random pairs (negative control) | 200 | 0.025 | 0.000 |
-| llama3.1-8b | Ground-truth positives | 565 | 0.432 | **0.007** |
-| llama3.1-8b | Known at the cutoff (positive control) | 200 | 0.565 | 0.000 |
-| llama3.1-8b | Random pairs (negative control) | 201 | 0.134 | 0.005 |
-
-**Table 5.** Closed-book probe, 965 items per model.
-
-The model is asked, with no tools, whether each pair has reached a phase 2+ trial or approval and
+Table S2 reports the probe. The model is asked, with no tools, whether each pair has reached a phase 2+ trial or approval and
 since when; a claim carrying a post-cutoff year, or no year, is flagged. The probe items were
 drawn from the ground truth as it stood before the grounding correction of Section 7.7, so its
 565 target items are a superset of the 546 positives reported elsewhere: 32 of them are pairs the
@@ -605,19 +597,7 @@ probe writes a per-model report for that purpose.
 
 ### 7.5 Cost
 
-| Model | System | Input tokens | Output tokens | Correct hits | Tokens per correct hit |
-|---|---|---|---|---|---|
-| qwen2.5-7b | closed book | 83,398 | 487,960 | 13 | **43,951** |
-| qwen2.5-7b | RAG, no verifier | 11,373,366 | 567,307 | 8 | 1,492,584 |
-| qwen2.5-7b | RAG + verify-revise | 12,316,771 | 677,320 | 9 | 1,443,788 |
-| llama3.1-8b | closed book | 80,716 | 597,643 | 11 | 61,669 |
-| llama3.1-8b | RAG, no verifier | 1,844,408 | 508,827 | 4 | 588,309 |
-| llama3.1-8b | RAG + verify-revise | 3,391,410 | 635,875 | 4 | 1,006,821 |
-| — | Popularity | 0 | 0 | 17 | 0 |
-
-**Table 6.** Cost over the 194 evaluation diseases. Hits are positives recovered in a top-20 list.
-
-Tool use dominates the bill: the grounded configurations read roughly 136 times as many input
+Table S3 gives tokens and cost per correct hit for every system. Tool use dominates the bill: the grounded configurations read roughly 136 times as many input
 tokens as the closed-book agent, because every path enumeration and candidate screen returns to
 the context. Verification adds 8% on top of that (12.32 M against 11.37 M input tokens) and is
 the cheapest intervention here per unit of faithfulness gained. Per correct hit, however, the
@@ -704,19 +684,6 @@ A reader should not read "verified" as "pharmacologically the mechanism".
 **Post-cutoff literature.** For each system's top-5 proposals we asked whether any PubMed record
 published after the cutoff co-mentions the drug and the disease.
 
-| Model | System | Pairs | Co-mention | Random control | Degree-matched | Lift vs matched |
-|---|---|---|---|---|---|---|
-| qwen2.5-7b | closed book | 955 | 0.308 | 0.034 | 0.063 | **+0.245** |
-| qwen2.5-7b | RAG, no verifier | 893 | 0.078 | 0.021 | 0.038 | **+0.040** |
-| qwen2.5-7b | RAG + verify-revise | 888 | 0.083 | 0.036 | 0.046 | **+0.037** |
-| llama3.1-8b | closed book | 957 | 0.278 | 0.034 | 0.065 | **+0.213** |
-| llama3.1-8b | RAG, no verifier | 394 | 0.089 | 0.040 | 0.030 | **+0.058** |
-| llama3.1-8b | RAG + verify-revise | 399 | 0.090 | 0.041 | 0.045 | **+0.045** |
-
-**Table 8.** Post-cutoff co-mention. The matched control pairs each proposed drug with another of
-comparable knowledge-graph degree for the same disease. The two models agree closely, which is
-some reassurance that this measure reflects the proposals rather than the model.
-
 The control matters more than the headline here. Against randomly drawn drugs, the closed-book
 agent looks strongly corroborated — 0.308 against 0.034, an eight-fold lift. Its examples are
 metformin, ibuprofen and amiodarone: drugs that co-occur with nearly any disease in the
@@ -724,7 +691,8 @@ literature. Matching the control on knowledge-graph degree, a proxy for how well
 is, nearly doubles its control rate to 0.063 and removes about a tenth of the apparent lift. Two
 readings follow, and they differ in how much weight they can carry.
 
-The **grounded systems' lift is small and that finding is robust**: their mechanism-verified
+Table S4 reports the co-mention rates. The **grounded systems' lift is small and that finding
+is robust**: their mechanism-verified
 proposals are co-mentioned in post-cutoff literature barely more often than equally studied drugs
 for the same disease (+0.037 and +0.040). Degree is an imperfect proxy and under-corrects for
 publication volume, but under-correction can only inflate a lift, so the true values are no
@@ -941,7 +909,7 @@ The data supporting the results of this article are deposited at Zenodo [17]:
 The repository builds the knowledge graph and the time-split ground truth from public sources and
 caches every external response, so a reported run can be re-scored, or re-executed offline, from
 the archived evidence. The deposited dataset carries the parts of that evidence that are ours to
-release: the frozen evaluation split and the curated files of Table 9, the derived ground truth
+release: the frozen evaluation split and the curated files of Table S5, the derived ground truth
 (`positives.csv`, `known_pairs.csv.gz`, the eval-disease table and the build report), every run's
 proposals with their full verification records and token accounting, the leakage-probe responses,
 and the generated reports and figures. Those 24 GPU-hours of model output are the part of this
@@ -952,7 +920,7 @@ What the deposit does *not* duplicate is the third-party data behind it. Our own
 released under CC BY 4.0, which is not ours to grant over data we did not create: ChEMBL is
 distributed under CC BY-SA, PubMed records carry publisher copyright in their abstracts, and
 PrimeKG, Mondo and HGNC each come with their own terms. Those sources are identified instead by
-version and access date in the table below, and `python -m repurpose_verify download all`
+version and access date in Table S6, and `python -m repurpose_verify download all`
 refetches them into the same cache layout. The ClinicalTrials.gov and Drugs@FDA responses are
 works of the United States government and are included, because they are the evidence for every
 positive in the ground truth and the registry is revised in place — a trial record refetched in
@@ -969,31 +937,6 @@ iteration order and that it is identical across interpreters started with differ
 
 These curated files carry the judgements this paper rests on, and are released with it; the
 derived data under `data/processed/` is regenerable from them and is not:
-
-| File | Contents |
-|---|---|
-| `data/manual/eval_split.csv` | the frozen 200-disease evaluation split (Section 7.1) |
-| `data/manual/approvals_after_cutoff.csv` | 114 author-curated FDA new-indication approvals, each with the approval letter's own clause as its note (Section 7.8) |
-| `data/manual/approvals_candidates.csv` | the worksheet those were judged from: every candidate approval, its letter quote, the proposed ontology term and the link to the FDA record |
-| `data/manual/mapping_audit.csv` | the 200-trial entity-mapping audit with its per-row judgements (Section 3.2) |
-| `scripts/measure_grounding_correction.py` | regenerates every positive added or removed by the grounding correction, as a CSV and the counts quoted in Section 7.7 |
-
-**Table 9.** Curated inputs released with the manuscript. Each holds a human judgement or a
-frozen choice that the pipeline cannot re-derive.
-
-### Source versions
-
-| Resource | Version / access date |
-|---|---|
-| PrimeKG | Harvard Dataverse doi:10.7910/DVN/IXA7BM, `nodes.tab` + `edges.csv` |
-| Mondo Disease Ontology | `mondo.obo`, retrieved 2026-10-20 |
-| HGNC | `hgnc_complete_set.txt`, retrieved 2026-10-21 |
-| ClinicalTrials.gov | API v2, queried 2026-10-20 |
-| PubMed | E-utilities, queried 2026-10-20 to 2026-10-24 |
-| ChEMBL | REST API, queried 2026-10-21 and 2026-10-24 |
-| UniChem | API v1, same dates |
-| Models | `qwen2.5:7b` and `llama3.1:8b` served by Ollama 0.35.0, each rebuilt with `num_ctx` 16384 |
-| Hardware | one NVIDIA RTX 4060 Laptop GPU (8 GB) |
 
 ## 11 Abbreviations
 
@@ -1049,6 +992,12 @@ the assistant produced during drafting gave a real arXiv identifier under a titl
 its own, and it survived two revisions before the audit caught it. The entity-mapping audit of
 Section 3.2 was carried out by an author with the same assistance; it is not an independent or
 blinded assessment, and the judged sheet is released so that it can be checked.
+
+## Supplementary material
+
+Tables S1 to S6 are provided as a separate supplementary file: the knowledge-graph baselines
+(S1), the weight-level leakage probe (S2), cost per correct hit (S3), post-cutoff co-mention
+(S4), the curated inputs released with the manuscript (S5) and the source versions (S6).
 
 ## References
 

@@ -24,6 +24,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DRAFT = ROOT / "paper" / "draft.md"
 COVER = ROOT / "paper" / "cover_letter.md"
 HIGHLIGHTS = ROOT / "paper" / "highlights.md"
+SUPPLEMENT = ROOT / "paper" / "supplementary.md"
 FIGURES = ROOT / "paper" / "figures"
 
 # An embedded image on its own line: dropped, so the legend below it stands alone.
@@ -105,6 +106,9 @@ def main() -> None:
     # Highlights go up as their own editable file, with "highlights" in the name.
     if HIGHLIGHTS.exists():
         to_docx(HIGHLIGHTS.read_text(encoding="utf-8"), out / "highlights.docx", "Highlights")
+    if SUPPLEMENT.exists():
+        to_docx(SUPPLEMENT.read_text(encoding="utf-8"), out / "supplementary_material.docx",
+                "Supplementary material")
 
     print(f"  manuscript.docx     {(out / 'manuscript.docx').stat().st_size / 1024:7.0f} KB"
           f"   ({len(body.split()):,} words, {dropped} embedded images removed)")
