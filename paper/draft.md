@@ -14,46 +14,25 @@ Linh Nguyen Thi My¹ (ORCID 0000-0003-3990-312X)
 ## Abstract
 
 **Background.** Large language model (LLM) agents are being applied to drug repurposing, but
-evaluations of them rarely establish two things a reader needs: that the agent could not have
-seen the answer, and that the mechanism it offers is real. Scores are commonly reported on
-retrospective associations the agent's sources already contain, and mechanistic narratives are
-accepted as written or graded by another LLM.
+evaluations rarely establish two things a reader needs: that the agent could not have seen the
+answer, and that the mechanism it offers is real.
 
-**Results.** We release a benchmark that separates these two questions. Every source an agent
-may query is frozen at 2021-12-31: a knowledge graph snapshot of that period and PubMed
-restricted by publication date. Agents are then scored on drug–disease pairs whose first phase 2
-or later trial began after the cutoff. From 172,939 pre-cutoff and 34,595 post-cutoff trials we
-obtain 2,731 pairs that were unknown at the cutoff by three independent criteria; 546 of them
-fall in a frozen 194-disease evaluation set, and none has a drug–disease edge in the graph. Each
-proposal must carry a mechanism path, and a verifier checks every edge against graph relations
-or a cited pre-cutoff abstract. We report *fabricated* edges (both endpoints real, nothing links
-them) apart from *unresolvable* ones (the endpoint names no single entity), because merging them
-overstates fabrication threefold.
+**Results.** Every source an agent may query is frozen at 2021-12-31, and agents are scored on
+pairs whose first phase 2 or later trial, or new-indication approval, falls after it: 2,731 pairs
+unknown at the cutoff by three independent criteria, 546 on a frozen 194-disease evaluation set.
+Each proposal carries a mechanism path, every edge checked against graph relations or a
+cited pre-cutoff abstract. *Fabricated* edges are reported apart from *unresolvable* ones; merging them
+overstates fabrication threefold. Across 14,065 proposals from two open-weight models, grounding
+acts strongly on faithfulness and not on accuracy: `qwen2.5-7b`'s fabrication falls from 0.208
+closed book to 0.039 with graph tools and 0.018 with verification, while `llama3.1-8b`'s rises
+from 0.290 to 0.942. Verification leaves ranking unchanged in both (ΔMRR 0.0004, *p* = 0.72 and
+0.64), and **no configuration of either model matches a popularity baseline** (MRR 0.030 against
+0.006–0.021). A leakage probe with controls finds no post-cutoff signal above its floor.
 
-Across those diseases and 14,065 proposals from two open-weight models of the same size class,
-grounding and verification act strongly on faithfulness, in opposite directions depending on the
-model, and not at all on accuracy. With `qwen2.5-7b`, a closed-book agent fabricates 20.8% of its
-mechanism edges and leaves 70.0% unresolvable; graph tools take fabrication to 3.9% and
-edge-level verification with one revision round to 1.8%. With `llama3.1-8b` the same tools take
-fabrication the other way, from 0.290 closed book to 0.942, because that model reuses identifiers
-it has seen instead of querying for a path — naming other *drugs* as targets in 688 of its edges.
-Grounding did not make either model truthful; it moved their errors from unresolvable prose into
-checkable claims, which one model then got right and the other wrong. Ranking is untouched by
-verification in both (ΔMRR 0.0004, *p* = 0.72 and 0.64), the closed-book configuration ranks at
-least as well as the grounded ones in both, and **no LLM configuration of either model matches a
-popularity baseline** (MRR 0.030 against 0.006–0.021; *p* = 0.012 and < 0.001). A weight-level
-leakage probe with positive and negative controls finds no post-cutoff signal above its own
-false-positive floor for either model.
-
-**Conclusions.** Faithfulness and accuracy are decoupled in current repurposing agents: in both
-models the least verifiable configuration ranks best, and neither beats ranking drugs by how many
-indications they already have. Verification removes over half of one model's fabricated claims
-for 8% more input tokens and no measurable loss in ranking, but it buys checkability, not
-discovery — and what grounding does to a model's fabrication rate is a property of the model, so
-single-model evidence about it is unsafe. Reporting either quantity alone, or either model alone,
-would have supported a conclusion the rest of the data contradicts. We also quantify a limit of
-mechanism-verified evaluation itself: only 61.4% of our positives admit any mechanism path in the
-graph, which caps what a verified-only system can recover regardless of the model.
+**Conclusions.** Faithfulness and accuracy are decoupled: in both models the least verifiable
+configuration ranks best. Verification buys checkability, not discovery, and grounding's effect on
+fabrication is a property of the model, so single-model evidence is unsafe. Only 61.4% of
+positives admit any mechanism path, capping what a verified-only system can recover.
 
 **Availability.** Code, splits, cached evidence and reports: https://github.com/MinhNhat-2504/repurpose-verify
 
